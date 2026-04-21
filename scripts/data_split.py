@@ -1,17 +1,13 @@
-import pandas as pd
+import os
 import json
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from pathlib import Path
 
 
 def data_split(data_path):
-    """
-    第一步：切出 70% 训练集（保留 30% 待分）
-    第二步：剩下的 30% 对半分（50% 给 eval，50% 给 test）
-    第三步：保存为 CSV
-    """
-
-    df = pd.read_csv(data_path)
+    
+    data_name = os.path.basename(data_path)
+    df = pd.read_csv(os.path.join(data_path, f'{data_name}.csv'))
     target_col = df.columns[-1].strip()
     X, y = df.drop(columns=[target_col]), df[target_col]
 
@@ -24,31 +20,30 @@ def data_split(data_path):
         df.index, test_size=0.30, random_state=42, stratify=y
     )
 
-    idx_eval, idx_test = train_test_split(
+    idx_val, idx_test = train_test_split(
         idx_temp, test_size=0.50, random_state=42, stratify=y[idx_temp]
     )
 
-    pt = Path(data_path)
-    df_final.loc[idx_train].reset_index(drop=True).to_csv(str(pt.with_name(f"{pt.stem}_train.csv")), index=False)
-    df_final.loc[idx_eval].reset_index(drop=True).to_csv(str(pt.with_name(f"{pt.stem}_eval.csv")), index=False)
-    df_final.loc[idx_test].reset_index(drop=True).to_csv(str(pt.with_name(f"{pt.stem}_test.csv")), index=False)
+    df_final.loc[idx_train].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_train.csv'), index=False)
+    df_final.loc[idx_val].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_val.csv'), index=False)
+    df_final.loc[idx_test].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_test.csv'), index=False)
 
     info = {
-        'name': f'{pt.stem}',
-        'task_type': ('binclass' if len(y.unique()) == 2 else 'multiclass') if len(y.unique()) < 50 else 'regression',
+        'name': f'{data_name}',
+        'task_type': ('binclass' if len(y.unique()) == 2 else 'multiclass') if len(y.unique()) < 100 else 'regression',
         'n_num_features': len(num_cols),
         'n_cat_features': len(cat_cols),
         'train_size': len(idx_train),
-        'val_size': len(idx_eval),
+        'val_size': len(idx_val),
         'test_size': len(idx_test)
     }
 
-    with open(str(pt.with_name('info.json')), 'w') as f:
+    with open(os.path.join(data_path, 'info.json'), 'w') as f:
         json.dump(info, f)
 
-    print(f'Split done!')
+    print(f'Spliting done!')
 
 
 if __name__ == '__main__':
-    data_path = 'data/adult/adult.csv'
+    data_path = 'data/adult'
     data_split(data_path)
