@@ -74,7 +74,7 @@ class DataWrapper:
                 norm_data.append(self.num_normalizer[col].transform(col_data.reshape(-1, 1)).reshape(-1, 1))
         norm_data = np.concatenate(norm_data, axis=1)
         norm_data = norm_data.astype(np.float32)
-        return norm_data
+        return pd.DataFrame(norm_data)
 
     def ReOrderColumns(self, data: pd.DataFrame):
         ndf = pd.DataFrame([])
@@ -189,7 +189,7 @@ class LabelWrapper:
         y = np.array(y)
 
         if self.task == 'binclass' or self.task == 'multiclass':
-            return self.encoder.transform(y)
+            return pd.DataFrame(self.encoder.transform(y).reshape(-1, 1))
 
         elif self.task == 'regression':
             return self.encoder.transform(y.reshape(-1, 1)).reshape(-1)
