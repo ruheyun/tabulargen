@@ -1,0 +1,152 @@
+from copy import deepcopy
+import torch
+import numpy as np
+import delu
+from tqdm import trange
+import pandas as pd
+from opacus import PrivacyEngine
+from torch.utils.data import DataLoader
+import os
+import sys
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT)
+from models import GaussianDiffusion, MLPDiffusion
+from utils import update_ema, TabularDataset
+
+
+class Trainer:
+    def __init__(self, diffusion, ema_model, train_iter, lr, optimizer, dp_params, privacy_engine,
+                epochs, loss_history, device=torch.device('cuda:0')):
+        self.diffusion = diffusion
+        self.ema_model = ema_model
+        self.train_iter = train_iter
+        self.dp_params = dp_params
+        self.privacy_engine = privacy_engine
+        self.init_lr = lr
+        self.optimizer = optimizer
+        self.device = device
+        self.loss_history = loss_history
+        self.log_every = 10
+        self.epochs = epochs
+        self.steps = epochs * len(train_iter)
+        self.is_dp = dp_params['is_dp']
+
+    def _anneal_lr(self, step):
+        frac_done = step / self.steps
+        lr = self.init_lr * (1 - frac_done)
+        if lr < self.init_lr * 0.3:
+            return
+        for param_group in self.optimizer.param_groups:
+            param_group["lr"] = lr
+
+    def _run_step(self, x, out_dict, is_dp):
+        x = x.to(self.device)
+        for k in out_dict:
+            out_dict[k] = out_dict[k].long().to(self.device)
+        self.optimizer.zero_grad(set_to_none=True)
+        loss = self.diffusion.compute_loss(x, out_dict, is_dp=is_dp)
+        loss.backward()
+        self.optimizer.step()
+        return loss
+
+    def run_loop(self):
+        curr_loss_gauss = 0.0
+        curr_count = 0
+        with trange(self.steps, unit="step", dynamic_ncols=True) as pbar:
+            step = 0
+            for epoch in range(self.epochs):
+                for x, out_dict in self.train_iter:
+                    out_dict = {'y': out_dict}
+                    batch_loss_gauss = self._run_step(x, out_dict, is_dp=self.is_dp)
+
+                    curr_count += len(x)
+                    curr_loss_gauss += batch_loss_gauss.item() * len(x)
+
+                    self._anneal_lr(step)
+                    step += 1
+
+                    update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
+
+                    if (step + 1) % self.log_every == 0:
+                        loss = np.around(curr_loss_gauss / curr_count, 3)
+                        pbar.set_postfix({
+                            'Loss': round(loss, 3),
+                        })
+                        
+                        self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
+                        curr_count = 0
+                        curr_loss_gauss = 0.0
+
+                    pbar.update(1)
+                    
+        print(f'Training done!')
+
+
+def train(
+        exp_path='exp/adult',
+        epochs=100,
+        lr=1e-4,
+        weight_decay=1e-4,
+        batch_size=256,
+        model_params=None,
+        num_timesteps=500,
+        gaussian_loss_type='mse',
+        scheduler='cosine',
+        dp_params=None,
+        device=torch.device('cuda:0'),
+        seed=0,
+):
+    delu.random.seed(seed)
+
+    train_data_path = os.path.join(exp_path, 'preprocess')
+    train_data_path = os.path.normpath(train_data_path)
+
+    dataset = TabularDataset(train_data_path)
+
+    num_features = dataset.X_dim
+    model_params['d_in'] = num_features
+
+    print(f'model params: {model_params}')
+
+    loss_history = pd.DataFrame(columns=['step', 'loss'])
+
+    model = MLPDiffusion(**model_params)
+    model.to(device)
+
+    diffusion = GaussianDiffusion(
+        input_dim=num_features,
+        denoise_fn=model,
+        gaussian_loss_type=gaussian_loss_type,
+        num_timesteps=num_timesteps,
+        scheduler=scheduler,
+        device=device
+    )
+    diffusion.to(device)
+    diffusion.train()
+
+    ema_model = deepcopy(diffusion._denoise_fn)
+    for param in ema_model.parameters():
+        param.detach_()
+
+    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
+
+    optimizer = torch.optim.AdamW(diffusion.parameters(), lr=lr, weight_decay=weight_decay)
+    privacy_engine = None
+    trainer = Trainer(
+        diffusion,
+        ema_model,
+        train_loader,
+        lr,
+        optimizer,
+        dp_params,
+        privacy_engine,
+        epochs,
+        loss_history,
+        device
+    )
+    trainer.run_loop()
+
+    torch.save(diffusion._denoise_fn.state_dict(), os.path.join(exp_path, 'model.pt'))
+    torch.save(ema_model.state_dict(), os.path.join(exp_path, 'model_ema.pt'))
+
+    loss_history.to_csv(os.path.join(exp_path, 'loss.csv'), index=False)    

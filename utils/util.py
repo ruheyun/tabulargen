@@ -1,7 +1,44 @@
 import torch
+import os
+import json
+import tomllib
 import numpy as np
+import pandas as pd
 import torch.nn.functional as F
 from inspect import isfunction
+from torch.utils.data import Dataset
+from typing import Union, Any, Dict, cast
+from pathlib import Path
+
+RawConfig = Dict[str, Any]
+_CONFIG_NONE = '__none__'
+
+
+def load_config(path: Union[Path, str]) -> Any:
+    """
+    读取 TOML 配置文件。
+    """
+    path = Path(path)
+    with path.open("rb") as f:
+        config = tomllib.load(f)
+    return unpack_config(config)
+
+
+def unpack_config(config: RawConfig) -> RawConfig:
+    config = cast(RawConfig, _replace(config, lambda x: x == _CONFIG_NONE, None))
+    return config
+
+
+def _replace(data, condition, value):
+    def do(x):
+        if isinstance(x, dict):
+            return {k: do(v) for k, v in x.items()}
+        elif isinstance(x, list):
+            return [do(y) for y in x]
+        else:
+            return value if condition(x) else x
+
+    return do(data)
 
 
 def log_1_min_a(a):
@@ -72,3 +109,41 @@ def approx_standard_normal_cdf(x):
 
 def exists(x):
     return x is not None
+
+
+def update_ema(target_params, source_params, rate=0.999):
+
+    with torch.no_grad():
+        for targ, src in zip(target_params, source_params):
+            targ.mul_(rate).add_(src.detach(), alpha=1 - rate)
+
+
+class TabularDataset(Dataset):
+
+    def __init__(self, data_path, type='train'):
+
+        df = pd.read_csv(os.path.join(data_path, f'{type}.csv'))
+
+        with open(os.path.join(data_path, 'info.json'), 'r') as f:
+            info = json.load(f)     
+
+        if info['task_type'] == 'binclass':
+            label_dtype = torch.float32
+        else:
+            label_dtype = torch.long
+        
+        self.y = torch.tensor(df['label'].values, dtype=label_dtype)
+        self.X = torch.tensor(df.drop(columns=['label']).values, dtype=torch.float32)
+        
+        self.X_dim = self.X.shape[1]
+
+        assert self.X_dim == info['n_features'], ('data dim false!')
+
+    def __len__(self):
+
+        return len(self.X)
+    
+    def __getitem__(self, idx):
+
+        return self.X[idx], self.y[idx]
+    

@@ -46,9 +46,9 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_val_encoding.columns = cols        
     df_test_encoding.columns = cols   
 
-    df_train_encoding.to_csv(os.path.join(out_path, f'{data_name}_train.csv'), index=False)
-    df_val_encoding.to_csv(os.path.join(out_path, f'{data_name}_val.csv'), index=False)
-    df_test_encoding.to_csv(os.path.join(out_path, f'{data_name}_test.csv'), index=False)
+    df_train_encoding.to_csv(os.path.join(out_path, f'train.csv'), index=False)
+    df_val_encoding.to_csv(os.path.join(out_path, f'val.csv'), index=False)
+    df_test_encoding.to_csv(os.path.join(out_path, f'test.csv'), index=False)
 
     with open(os.path.join(out_path, 'info.json'), 'w') as f:
         json.dump(info, f)

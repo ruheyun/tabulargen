@@ -194,7 +194,7 @@ class LabelWrapper:
         elif self.task == 'regression':
             return self.encoder.transform(y.reshape(-1, 1)).reshape(-1)
 
-    def inverse_transform(self, y):
+    def Reverse(self, y):
         y = np.array(y)
 
         if self.task == 'binclass' or self.task == 'multiclass':

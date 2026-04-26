@@ -1,7 +1,6 @@
 import math
 from utils import *
 
-
 eps = 1e-8
 
 
@@ -53,7 +52,6 @@ class GaussianDiffusion(torch.nn.Module):
         parametrization='x0',
         scheduler='cosine',
         device=torch.device('cpu'),
-        dp_params=None
     ):
         
         super().__init__()
@@ -67,7 +65,6 @@ class GaussianDiffusion(torch.nn.Module):
         self.num_timesteps = num_timesteps
         self.parametrization = parametrization
         self.scheduler = scheduler
-        self.dp_params = dp_params
 
         betas = get_named_beta_schedule(scheduler, num_timesteps)
         betas = torch.tensor(betas.astype('float64'))
@@ -123,144 +120,143 @@ class GaussianDiffusion(torch.nn.Module):
         self.register_buffer('Lt_history', torch.zeros(num_timesteps))
         self.register_buffer('Lt_count', torch.zeros(num_timesteps))
         
-        def gaussian_q_mean_variance(self, x_start, t):
-            mean = (
-                    extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
-            )
-            variance = extract(1.0 - self.alphas_cumprod, t, x_start.shape)
-            log_variance = extract(
-                self.log_1_min_cumprod_alpha, t, x_start.shape
-            )
-            return mean, variance, log_variance
-        
-        def gaussian_q_sample(self, x_start, t, noise=None):
-            if noise is None:
-                noise = torch.randn_like(x_start)
-            assert noise.shape == x_start.shape
-            return (
+    def gaussian_q_mean_variance(self, x_start, t):
+        mean = (
                 extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
-                + extract(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape)
-                * noise
-            )
-            
-        def gaussian_q_posterior_mean_variance(self, x_start, x_t, t):
-            assert x_start.shape == x_t.shape
-            posterior_mean = (
-                    extract(self.posterior_mean_coef1, t, x_t.shape) * x_start
-                    + extract(self.posterior_mean_coef2, t, x_t.shape) * x_t
-            )
-            posterior_variance = extract(self.posterior_variance, t, x_t.shape)
-            posterior_log_variance_clipped = extract(
-                self.posterior_log_variance_clipped, t, x_t.shape
-            )
-            assert (
-                    posterior_mean.shape[0]
-                    == posterior_variance.shape[0]
-                    == posterior_log_variance_clipped.shape[0]
-                    == x_start.shape[0]
-            )
-            return posterior_mean, posterior_variance, posterior_log_variance_clipped
+        )
+        variance = extract(1.0 - self.alphas_cumprod, t, x_start.shape)
+        log_variance = extract(
+            self.log_1_min_cumprod_alpha, t, x_start.shape
+        )
+        return mean, variance, log_variance
+    
+    def gaussian_q_sample(self, x_start, t, noise=None):
+        if noise is None:
+            noise = torch.randn_like(x_start)
+        assert noise.shape == x_start.shape
+        return (
+            extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
+            + extract(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape)
+            * noise
+        )
         
-        def gaussian_p_mean_variance(self, model_output, x, t):
+    def gaussian_q_posterior_mean_variance(self, x_start, x_t, t):
+        assert x_start.shape == x_t.shape
+        posterior_mean = (
+                extract(self.posterior_mean_coef1, t, x_t.shape) * x_start
+                + extract(self.posterior_mean_coef2, t, x_t.shape) * x_t
+        )
+        posterior_variance = extract(self.posterior_variance, t, x_t.shape)
+        posterior_log_variance_clipped = extract(
+            self.posterior_log_variance_clipped, t, x_t.shape
+        )
+        assert (
+                posterior_mean.shape[0]
+                == posterior_variance.shape[0]
+                == posterior_log_variance_clipped.shape[0]
+                == x_start.shape[0]
+        )
+        return posterior_mean, posterior_variance, posterior_log_variance_clipped
+    
+    def gaussian_p_mean_variance(self, model_output, x, t):
 
-            B, C = x.shape[:2]
-            assert t.shape == (B,)
+        B, C = x.shape[:2]
+        assert t.shape == (B,)
 
-            model_variance = torch.cat([self.posterior_variance[1].unsqueeze(0).to(x.device), (1. - self.alphas)[1:]],
-                                    dim=0)
-            
-            model_log_variance = torch.log(model_variance)
-
-            model_variance = extract(model_variance, t, x.shape)
-            model_log_variance = extract(model_log_variance, t, x.shape)
-
-            if self.gaussian_parametrization == 'eps':
-                pred_xstart = self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
-            elif self.gaussian_parametrization == 'x0':
-                pred_xstart = model_output
-            else:
-                raise NotImplementedError
-
-            model_mean, _, _ = self.gaussian_q_posterior_mean_variance(
-                x_start=pred_xstart, x_t=x, t=t
-            )
-
-            assert (
-                    model_mean.shape == model_log_variance.shape == pred_xstart.shape == x.shape
-            ), f'{model_mean.shape}, {model_log_variance.shape}, {pred_xstart.shape}, {x.shape}'
-
-            return {
-                "mean": model_mean,
-                "variance": model_variance,
-                "log_variance": model_log_variance,
-                "pred_xstart": pred_xstart,
-            }
-            
-        def _predict_xstart_from_eps(self, x_t, t, eps):
-            assert x_t.shape == eps.shape
-            return (
-                    extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t
-                    - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * eps
-            )
-            
+        model_variance = torch.cat([self.posterior_variance[1].unsqueeze(0).to(x.device), (1. - self.alphas)[1:]],
+                                dim=0)
         
-        def _gaussian_loss(self, model_out, noise):
-            terms = {}
-            if self.gaussian_loss_type == 'mse':
-                terms["loss"] = mean_flat((noise - model_out) ** 2)
-            else:
-                raise ValueError('gaussian loss type must be "mse"')
+        model_log_variance = torch.log(model_variance)
 
-            return terms['loss']
+        model_variance = extract(model_variance, t, x.shape)
+        model_log_variance = extract(model_log_variance, t, x.shape)
+
+        if self.gaussian_parametrization == 'eps':
+            pred_xstart = self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
+        elif self.gaussian_parametrization == 'x0':
+            pred_xstart = model_output
+        else:
+            raise NotImplementedError
+
+        model_mean, _, _ = self.gaussian_q_posterior_mean_variance(
+            x_start=pred_xstart, x_t=x, t=t
+        )
+
+        assert (
+                model_mean.shape == model_log_variance.shape == pred_xstart.shape == x.shape
+        ), f'{model_mean.shape}, {model_log_variance.shape}, {pred_xstart.shape}, {x.shape}'
+
+        return {
+            "mean": model_mean,
+            "variance": model_variance,
+            "log_variance": model_log_variance,
+            "pred_xstart": pred_xstart,
+        }
+        
+    def _predict_xstart_from_eps(self, x_t, t, eps):
+        assert x_t.shape == eps.shape
+        return (
+                extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t
+                - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * eps
+        )
+        
+    
+    def _gaussian_loss(self, model_out, noise):
+        terms = {}
+        if self.gaussian_loss_type == 'mse':
+            terms["loss"] = mean_flat((noise - model_out) ** 2)
+        else:
+            raise ValueError('gaussian loss type must be "mse"')
+
+        return terms['loss']
+    
+    
+    def gaussian_p_sample(self, model_out, x, t):
+        out = self.gaussian_p_mean_variance(model_out, x, t)
+        noise = torch.randn_like(x)
+        nonzero_mask = (
+            (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
+        )
+
+        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        return {
+            "sample": sample, 
+            "pred_xstart": out["pred_xstart"]
+        }
         
         
-        def gaussian_p_sample(self, model_out, x, t):
-            out = self.gaussian_p_mean_variance(model_out, x, t)
-            noise = torch.randn_like(x)
-            nonzero_mask = (
-                (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
-            )
+    def sample_time(self, b, device, method='uniform'):
+        if method == 'importance':
+            if not (self.Lt_count > 10).all():
+                return self.sample_time(b, device, method='uniform')
 
-            sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-            return {
-                "sample": sample, 
-                "pred_xstart": out["pred_xstart"]
-            }
-            
-            
-        def sample_time(self, b, device, method='uniform', stage='0'):
-            if method == 'importance':
-                if not (self.Lt_count > 10).all():
-                    return self.sample_time(b, device, method='uniform')
+            Lt_sqrt = torch.sqrt(self.Lt_history + 1e-10) + 0.0001
+            Lt_sqrt[0] = Lt_sqrt[1]  
+            pt_all = (Lt_sqrt / Lt_sqrt.sum()).to(device)
 
-                Lt_sqrt = torch.sqrt(self.Lt_history + 1e-10) + 0.0001
-                Lt_sqrt[0] = Lt_sqrt[1]  
-                pt_all = (Lt_sqrt / Lt_sqrt.sum()).to(device)
+            t = torch.multinomial(pt_all, num_samples=b, replacement=True).to(device)
 
-                t = torch.multinomial(pt_all, num_samples=b, replacement=True).to(device)
+            pt = pt_all.gather(dim=0, index=t)
 
-                pt = pt_all.gather(dim=0, index=t)
+            return t, pt
 
-                return t, pt
+        elif method == 'uniform':
+            t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
+            pt = torch.ones_like(t).float() / self.num_timesteps
 
-            elif method == 'uniform':
-                t = torch.randint(self.dp_params[stage]['S'], self.dp_params[stage]['T'], (b,), device=device).long()
-                pt = torch.ones_like(t).float() / (self.dp_params[stage]['T'] - self.dp_params[stage]['S'])
-
-                return t, pt
-            else:
-                raise ValueError
-            
+            return t, pt
+        else:
+            raise ValueError
         
-        def compute_loss(self, x, out_dict, stage='0', ts=-1):
-            b = x.shape[0]
-            device = x.device
-            if stage == '0':
-                if ts == -1:
-                    t, pt = self.sample_time(b, device, 'uniform', stage)
-                else:
-                    t = torch.tensor(ts, device=device).long().expand(b)
+    
+    def compute_loss(self, x, out_dict, is_dp=False, ts=-1):
+        b = x.shape[0]
+        device = x.device
+        if is_dp:
 
+            total_loss_gauss = torch.zeros(b, device=device)
+            for _ in range(self.dp_params['common']['noise_multiplicity_K']):
+                t, pt = self.sample_time(b, device, 'uniform')
                 noise = torch.randn_like(x)
                 x_t = self.gaussian_q_sample(x, t, noise=noise)
 
@@ -270,76 +266,79 @@ class GaussianDiffusion(torch.nn.Module):
                     **out_dict
                 )
 
-                loss_gauss = self._gaussian_loss(model_out, x, x_t, t, noise)
+                loss_gauss = self._gaussian_loss(model_out, noise)
+                total_loss_gauss += loss_gauss
+            total_loss_gauss /= self.dp_params['common']['noise_multiplicity_K']
+            return total_loss_gauss.mean()
+        else:
 
-                return loss_gauss.mean()
+            if ts == -1:
+                t, pt = self.sample_time(b, device, 'uniform')
             else:
-                total_loss_gauss = torch.zeros(b, device=device)
-                for _ in range(self.dp_params['common']['noise_multiplicity_K']):
-                    t, pt = self.sample_time(b, device, 'uniform', stage)
-                    noise = torch.randn_like(x)
-                    x_t = self.gaussian_q_sample(x, t, noise=noise)
+                t = torch.tensor(ts, device=device).long().expand(b)
 
-                    model_out = self._denoise_fn(
-                        x_t,
-                        t,
-                        **out_dict
-                    )
+            noise = torch.randn_like(x)
+            x_t = self.gaussian_q_sample(x, t, noise=noise)
 
-                    loss_gauss = self._gaussian_loss(model_out, x, x_t, t, noise)
-                    total_loss_gauss += loss_gauss
-                total_loss_gauss /= self.dp_params['common']['noise_multiplicity_K']
-                return total_loss_gauss.mean()
+            model_out = self._denoise_fn(
+                x_t,
+                t,
+                **out_dict
+            )
+
+            loss_gauss = self._gaussian_loss(model_out, noise)
+
+            return loss_gauss.mean()
 
 
-        def sample_all(self, num_samples, batch_size, y_dist):
-        
-            print('Sample using DDPM.')
-            sample_fn = self.sample
+    def sample_all(self, num_samples, batch_size, y_dist):
+    
+        print('Sample using DDPM.')
+        sample_fn = self.sample
 
-            b = batch_size
+        b = batch_size
 
-            all_y = []
-            all_samples = []
-            num_generated = 0
-            while num_generated < num_samples:
-                sample, out_dict = sample_fn(b, y_dist)
-                y_batch = out_dict.get('y', None)
-                mask_nan = torch.any(sample.isnan(), dim=1)
-                if mask_nan.any():
-                    sample = sample[~mask_nan]
-                    if exists(y_batch):
-                        y_batch = y_batch[~mask_nan]
-
-                all_samples.append(sample)
-
+        all_y = []
+        all_samples = []
+        num_generated = 0
+        while num_generated < num_samples:
+            sample, out_dict = sample_fn(b, y_dist)
+            y_batch = out_dict.get('y', None)
+            mask_nan = torch.any(sample.isnan(), dim=1)
+            if mask_nan.any():
+                sample = sample[~mask_nan]
                 if exists(y_batch):
-                    all_y.append(y_batch.cpu())
-                num_generated += sample.shape[0]
+                    y_batch = y_batch[~mask_nan]
 
-            x_gen = torch.cat(all_samples, dim=0)[:num_samples]
-            y_gen = torch.cat(all_y, dim=0)[:num_samples] if all_y else None
-            return x_gen, y_gen
-        
-        
-        @torch.no_grad()
-        def sample(self, num_samples, y_dist=None):
-            b = num_samples
-            device = self.log_alpha.device
-            z_norm = torch.randn((b, self.input_dim), device=device)
+            all_samples.append(sample)
 
-            out_dict = {}
-            if exists(y_dist):
-                y = torch.multinomial(y_dist, num_samples=b, replacement=True)
-                out_dict = {'y': y.long().to(device)}
-            for i in reversed(range(0, self.num_timesteps)):
-                t = torch.full((b,), i, device=device, dtype=torch.long)
-                model_out = self._denoise_fn(
-                    z_norm.float(),
-                    t,
-                    **out_dict
-                )
-                z_norm = self.gaussian_p_sample(model_out, z_norm, t, clip_denoised=False)['sample']
+            if exists(y_batch):
+                all_y.append(y_batch.cpu())
+            num_generated += sample.shape[0]
 
-            return z_norm.cpu(), out_dict
+        x_gen = torch.cat(all_samples, dim=0)[:num_samples]
+        y_gen = torch.cat(all_y, dim=0)[:num_samples] if all_y else None
+        return x_gen, y_gen
+    
+    
+    @torch.no_grad()
+    def sample(self, num_samples, y_dist=None):
+        b = num_samples
+        device = self.log_alpha.device
+        z_norm = torch.randn((b, self.input_dim), device=device)
+
+        out_dict = {}
+        if exists(y_dist):
+            y = torch.multinomial(y_dist, num_samples=b, replacement=True)
+            out_dict = {'y': y.long().to(device)}
+        for i in reversed(range(0, self.num_timesteps)):
+            t = torch.full((b,), i, device=device, dtype=torch.long)
+            model_out = self._denoise_fn(
+                z_norm.float(),
+                t,
+                **out_dict
+            )
+            z_norm = self.gaussian_p_sample(model_out, z_norm, t, clip_denoised=False)['sample']
+
+        return z_norm.cpu(), out_dict
         
