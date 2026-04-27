@@ -36,6 +36,7 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_test_encoding = pd.concat([X_test_encoding, y_test_encoding], axis=1)
 
     info['n_features'] = len(X_train_encoding.loc[0])
+    info['y_name'] = [df_train.columns[-1]]
 
     num_cols = [f'num_{i}' for i in range(info['n_num_features'])]
     cat_cols = [f'cat_{i}' for i in range(info['n_features'] - info['n_num_features'])]
@@ -46,9 +47,14 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_val_encoding.columns = cols        
     df_test_encoding.columns = cols   
 
-    df_train_encoding.to_csv(os.path.join(out_path, f'train.csv'), index=False)
-    df_val_encoding.to_csv(os.path.join(out_path, f'val.csv'), index=False)
-    df_test_encoding.to_csv(os.path.join(out_path, f'test.csv'), index=False)
+    df_train_encoding.to_csv(os.path.join(out_path, 'train.csv'), index=False)
+    df_val_encoding.to_csv(os.path.join(out_path, 'val.csv'), index=False)
+    df_test_encoding.to_csv(os.path.join(out_path, 'test.csv'), index=False)
+
+    label_counts = y_train_encoding.value_counts().sort_index()
+    p_y = (label_counts / label_counts.sum()).values
+
+    info['p_y'] = p_y.tolist()
 
     with open(os.path.join(out_path, 'info.json'), 'w') as f:
         json.dump(info, f)

@@ -291,9 +291,8 @@ class GaussianDiffusion(torch.nn.Module):
             return loss_gauss.mean()
 
 
-    def sample_all(self, num_samples, batch_size, y_dist):
+    def sample_all(self, num_samples, batch_size, y_dist=None):
     
-        print('Sample using DDPM.')
         sample_fn = self.sample
 
         b = batch_size
@@ -338,7 +337,7 @@ class GaussianDiffusion(torch.nn.Module):
                 t,
                 **out_dict
             )
-            z_norm = self.gaussian_p_sample(model_out, z_norm, t, clip_denoised=False)['sample']
+            z_norm = self.gaussian_p_sample(model_out, z_norm, t)['sample']
 
         return z_norm.cpu(), out_dict
         

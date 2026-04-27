@@ -4,6 +4,7 @@ import argparse
 import torch
 from preprocess import data_process
 from dm_train import train
+from dm_sample import sample
 from utils import load_config
 import warnings
 warnings.filterwarnings('ignore')
@@ -20,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser()
     # 启用训练、采样、测试
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
-    parser.add_argument('--train', action='store_true', default=True)
+    parser.add_argument('--train', action='store_true', default=False)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
     # 评估模型设置
@@ -52,22 +53,17 @@ def main():
             device=device,
         )
 
-    # if args.sample:
-    #     sample(
-    #         num_samples=raw_config['sample']['num_samples'],
-    #         batch_size=raw_config['sample']['batch_size'],
-    #         disbalance=raw_config['sample'].get('disbalance', None),
-    #         **raw_config['diffusion_params'],
-    #         exp_dir=raw_config['exp_path'],
-    #         data_path=raw_config['data_path'],
-    #         model_path=os.path.join(raw_config['exp_path'], 'model_ema.pt'),
-    #         model_type=raw_config['model_type'],
-    #         model_params=raw_config['model_params'],
-    #         T_dict=raw_config['train']['T'],
-    #         device=device,
-    #         seed=raw_config['sample'].get('seed', 0),
-    #         change_val=args.change_val
-    #     )
+    if args.sample:
+        sample(
+            **raw_config['diffusion_params'],
+            exp_path=raw_config['exp_path'],
+            batch_size=raw_config['sample']['batch_size'],
+            num_samples=raw_config['sample']['num_samples'],
+            model_path=os.path.join(raw_config['exp_path'], 'model_ema.pt'),
+            model_params=raw_config['model_params'],
+            device=device,
+            seed=raw_config['sample'].get('seed', 0)
+        )
 
     # if args.eval:
     #     if raw_config['eval']['type']['eval_model'] == 'catboost':

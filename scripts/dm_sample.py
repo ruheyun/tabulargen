@@ -12,7 +12,6 @@ from models import GaussianDiffusion, MLPDiffusion
 
 
 def sample(
-    data_path='data/adult',
     exp_path='exp/adult',
     batch_size=256,
     num_samples=0,
@@ -52,8 +51,9 @@ def sample(
     diffusion.eval()
 
     print('Starting sampling...')
+    empirical_class_dist = torch.tensor(info['p_y'], dtype=torch.float32)
     
-    x_gen, y_gen = diffusion.sample_all(num_samples, batch_size)
+    x_gen, y_gen = diffusion.sample_all(num_samples, batch_size, empirical_class_dist)
 
     X_gen, y_gen = x_gen.cpu().numpy(), y_gen.cpu().numpy()
 
@@ -82,14 +82,9 @@ def sample(
     X_gen_ = pd.DataFrame(X_gen_)
     y_gen_ = pd.DataFrame(y_gen_)
 
-    num_cols = [f"num_{i}" for i in range(info['n_num_features'])]
-    cat_cols = [f"cat_{i}" for i in range(info['n_cat_features'])]
-    y_cols = ['label']
-
-    cols = num_cols + cat_cols + y_cols
+    y_gen_.columns = info['y_name']
 
     reverse_data = pd.concat([X_gen_, y_gen_], axis=1)
-    reverse_data.columns = cols
     reverse_data.to_csv(os.path.join(exp_path, 'reverse.csv'), index=False, header=True)
 
     print(f"Raw samples saved to {exp_path}, Sample done!")

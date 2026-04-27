@@ -51,10 +51,11 @@ def log_add_exp(a, b):
 
 
 def extract(a, t, x_shape):
-    b, *_ = t.shape
     t = t.to(a.device)
     out = a.gather(-1, t)
-    return out.reshape(b, *((1,) * (len(x_shape) - 1)))
+    while len(out.shape) < len(x_shape):
+        out = out[..., None]
+    return out.expand(x_shape)
 
 
 def normal_kl(mean1, logvar1, mean2, logvar2):
