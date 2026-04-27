@@ -6,8 +6,7 @@ from data_encode import DataWrapper, LabelWrapper
 
 
 def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb'):
-    out_path = os.path.join(exp_path, 'preprocess')
-    os.makedirs(out_path, exist_ok=True)
+    os.makedirs(exp_path, exist_ok=True)
     data_name = os.path.basename(data_path)
 
     df_train = pd.read_csv(os.path.join(data_path, f'{data_name}_train.csv'))
@@ -47,22 +46,22 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_val_encoding.columns = cols        
     df_test_encoding.columns = cols   
 
-    df_train_encoding.to_csv(os.path.join(out_path, 'train.csv'), index=False)
-    df_val_encoding.to_csv(os.path.join(out_path, 'val.csv'), index=False)
-    df_test_encoding.to_csv(os.path.join(out_path, 'test.csv'), index=False)
+    df_train_encoding.to_csv(os.path.join(exp_path, 'train.csv'), index=False)
+    df_val_encoding.to_csv(os.path.join(exp_path, 'val.csv'), index=False)
+    df_test_encoding.to_csv(os.path.join(exp_path, 'test.csv'), index=False)
 
     label_counts = y_train_encoding.value_counts().sort_index()
     p_y = (label_counts / label_counts.sum()).values
 
     info['p_y'] = p_y.tolist()
 
-    with open(os.path.join(out_path, 'info.json'), 'w') as f:
+    with open(os.path.join(exp_path, 'info.json'), 'w') as f:
         json.dump(info, f)
 
-    with open(os.path.join(out_path, "data_wrapper.pkl"), 'wb') as f:
+    with open(os.path.join(exp_path, "data_wrapper.pkl"), 'wb') as f:
         pickle.dump(train_wrapper, f)
 
-    with open(os.path.join(out_path, "label_wrapper.pkl"), 'wb') as f:
+    with open(os.path.join(exp_path, "label_wrapper.pkl"), 'wb') as f:
         pickle.dump(label_wrapper, f)
 
 

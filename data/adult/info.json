@@ -1,6 +1,7 @@
 {
     "name": "adult",
     "task_type": "binclass",
+    "n_classes": 2,
     "n_num_features": 6,
     "n_cat_features": 8,
     "train_size": 34189,

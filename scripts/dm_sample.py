@@ -25,9 +25,7 @@ def sample(
 ):
     delu.random.seed(seed)
 
-    train_data_path = os.path.join(exp_path, 'preprocess')
-    train_data_path = os.path.normpath(train_data_path)
-    with open(os.path.join(train_data_path, 'info.json'), 'r') as f:
+    with open(os.path.join(exp_path, 'info.json'), 'r') as f:
         info = json.load(f)  
 
     model = MLPDiffusion(**model_params)
@@ -57,10 +55,10 @@ def sample(
 
     X_gen, y_gen = x_gen.cpu().numpy(), y_gen.cpu().numpy()
 
-    with open(f"{train_data_path}/data_wrapper.pkl", "rb") as f:
+    with open(f"{exp_path}/data_wrapper.pkl", "rb") as f:
         data_wrapper = pickle.load(f)
 
-    with open(f"{train_data_path}/label_wrapper.pkl", "rb") as f:
+    with open(f"{exp_path}/label_wrapper.pkl", "rb") as f:
         label_wrapper = pickle.load(f)
 
     X_gen_ = data_wrapper.Reverse(X_gen)

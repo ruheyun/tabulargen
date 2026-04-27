@@ -9,15 +9,13 @@ from inspect import isfunction
 from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 
 RawConfig = Dict[str, Any]
 _CONFIG_NONE = '__none__'
 
 
 def load_config(path: Union[Path, str]) -> Any:
-    """
-    读取 TOML 配置文件。
-    """
     path = Path(path)
     with path.open("rb") as f:
         config = tomllib.load(f)
@@ -147,4 +145,44 @@ class TabularDataset(Dataset):
     def __getitem__(self, idx):
 
         return self.X[idx], self.y[idx]
-    
+
+
+def evaluate(y_true, y_pred, task_type):
+    if task_type == 'binclass':
+        y_prob = y_pred                      
+        y_label = (y_prob > 0.5).astype(int)
+
+        f1 = f1_score(y_true, y_label)
+        acc = accuracy_score(y_true, y_label)
+        auc = roc_auc_score(y_true, y_prob)
+
+    elif task_type == 'multiclass':
+        y_prob = y_pred                      
+        y_label = np.argmax(y_prob, axis=1)
+
+        f1 = f1_score(y_true, y_label, average='macro')
+        acc = accuracy_score(y_true, y_label)
+        auc = roc_auc_score(y_true, y_prob, multi_class='ovr')
+    else:
+        raise 'Task type is error!'
+
+    return {
+        'f1': f1,
+        'accuracy': acc,
+        'roc_auc': auc
+    }
+
+
+def print_metrics(results):
+    res = {
+        "val": {k: np.around(results["val"][k], 4) for k in results["val"]},
+        "test": {k: np.around(results["test"][k], 4) for k in results["test"]}
+    }
+
+    print("*"*100)
+    print("[val]")
+    print(res["val"])
+    print("[test]")
+    print(res["test"])
+
+    return res

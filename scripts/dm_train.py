@@ -98,10 +98,7 @@ def train(
 ):
     delu.random.seed(seed)
 
-    train_data_path = os.path.join(exp_path, 'preprocess')
-    train_data_path = os.path.normpath(train_data_path)
-
-    dataset = TabularDataset(train_data_path)
+    dataset = TabularDataset(exp_path)
 
     num_features = dataset.X_dim
     model_params['d_in'] = num_features

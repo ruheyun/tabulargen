@@ -5,6 +5,8 @@ import torch
 from preprocess import data_process
 from dm_train import train
 from dm_sample import sample
+from eval_catboost import train_catboost
+from eval_simple import train_simple
 from utils import load_config
 import warnings
 warnings.filterwarnings('ignore')
@@ -23,9 +25,9 @@ def main():
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
     parser.add_argument('--train', action='store_true', default=False)
     parser.add_argument('--sample', action='store_true', default=False)
-    parser.add_argument('--eval', action='store_true', default=False)
+    parser.add_argument('--eval', action='store_true', default=True)
     # 评估模型设置
-    parser.add_argument('--eval_model', type=str, choices=['mlp', 'catboost', 'simple'], default='catboost')
+    parser.add_argument('--eval_model', type=str, choices=['catboost', 'simple'], default='simple')
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
@@ -40,7 +42,7 @@ def main():
 
     save_config(raw_config['exp_path'], raw_config)
 
-    data_process(data_path=raw_config['data_path'], exp_path=raw_config['exp_path'], num_encoder='quantile', cat_encoder='alb')
+    # data_process(data_path=raw_config['data_path'], exp_path=raw_config['exp_path'], num_encoder='quantile', cat_encoder='alb')
 
 
     if args.train:
@@ -65,37 +67,25 @@ def main():
             seed=raw_config['sample'].get('seed', 0)
         )
 
-    # if args.eval:
-    #     if raw_config['eval']['type']['eval_model'] == 'catboost':
-    #         train_catboost(
-    #             exp_dir=raw_config['exp_path'],
-    #             data_path=raw_config['data_path'],
-    #             eval_type=raw_config['eval']['type']['eval_type'],
-    #             T_dict=raw_config['eval']['T'],
-    #             seed=raw_config['seed'],
-    #             change_val=args.change_val
-    #         )
-    #     elif raw_config['eval']['type']['eval_model'] == 'mlp':
-    #         train_mlp(
-    #             exp_dir=raw_config['exp_path'],
-    #             data_path=raw_config['data_path'],
-    #             eval_type=raw_config['eval']['type']['eval_type'],
-    #             T_dict=raw_config['train']['T'],
-    #             seed=raw_config['seed'],
-    #             change_val=args.change_val,
-    #             device=device
-    #         )
-    #     elif raw_config['eval']['type']['eval_model'] == 'simple':
-    #         train_simple(
-    #             exp_dir=raw_config['exp_path'],
-    #             data_path=raw_config['data_path'],
-    #             eval_type=raw_config['eval']['type']['eval_type'],
-    #             T_dict=raw_config['train']['T'],
-    #             seed=raw_config['seed'],
-    #             change_val=args.change_val
-    #         )
-    #     else:
-    #         print('No eval model!')
+    if args.eval:
+        if raw_config['eval']['type']['eval_model'] == 'catboost':
+            train_catboost(
+                data_path=raw_config['data_path'],
+                exp_path=raw_config['exp_path'],
+                seed=raw_config['seed'],
+                eval_type=raw_config['eval']['type']['eval_type'],
+            )
+        
+        elif raw_config['eval']['type']['eval_model'] == 'simple':
+            train_simple(
+                data_path=raw_config['data_path'],
+                exp_path=raw_config['exp_path'],
+                eval_type=raw_config['eval']['type']['eval_type'],
+                seed=raw_config['seed'],
+            )
+
+        else:
+            print('No eval model!')
 
 
 if __name__ == '__main__':

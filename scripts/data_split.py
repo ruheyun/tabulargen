@@ -31,6 +31,7 @@ def data_split(data_path):
     info = {
         'name': f'{data_name}',
         'task_type': ('binclass' if len(y.unique()) == 2 else 'multiclass') if len(y.unique()) < 100 else 'regression',
+        'n_classes': len(y.unique()),
         'n_num_features': len(num_cols),
         'n_cat_features': len(cat_cols),
         'train_size': len(idx_train),
