@@ -47,7 +47,7 @@ def objective(trial):
     dump_config(base_config, exps_path / 'config.toml')
 
     subprocess.run([
-        python_exec, f'{pipeline}',
+        python_exec, f'scripts/{pipeline}',
         '--config', f'{exps_path / "config.toml"}',
         '--train'
     ], check=True)
@@ -59,7 +59,7 @@ def objective(trial):
         dump_config(base_config, exps_path / 'config.toml')
 
         subprocess.run([
-            python_exec, f'{pipeline}',
+            python_exec, f'scripts/{pipeline}',
             '--config', f'{exps_path / "config.toml"}',
             '--sample', '--eval'
         ], check=True)
@@ -119,7 +119,7 @@ dump_config(best_config, best_config_path)
 # dump_json(optuna.importance.get_param_importances(study), parent_path / f'{prefix}_best/importance.json')
 
 subprocess.run([
-    python_exec, f'{pipeline}',
+    python_exec, f'scripts/{pipeline}',
     '--config', f'{best_config_path}',
     '--train'
 ], check=True)
@@ -127,7 +127,7 @@ subprocess.run([
 all_report = []
 for sample_seed in range(5):
     subprocess.run([
-        python_exec, f'{pipeline}',
+        python_exec, f'scripts/{pipeline}',
         '--config', f'{best_config_path}',
         '--sample', '--eval'
     ], check=True)

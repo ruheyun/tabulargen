@@ -25,9 +25,9 @@ def main():
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
     parser.add_argument('--train', action='store_true', default=False)
     parser.add_argument('--sample', action='store_true', default=False)
-    parser.add_argument('--eval', action='store_true', default=True)
+    parser.add_argument('--eval', action='store_true', default=False)
     # 评估模型设置
-    parser.add_argument('--eval_model', type=str, choices=['catboost', 'simple'], default='simple')
+    parser.add_argument('--eval_model', type=str, choices=['catboost', 'simple'], default='catboost')
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
