@@ -267,6 +267,8 @@ class GaussianDiffusion(torch.nn.Module):
             pt = self.snr_p.to(device)
             t = torch.multinomial(pt, b, replacement=True)
 
+            return t, pt
+
         else:
             raise ValueError
         
