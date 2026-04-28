@@ -255,7 +255,7 @@ class GaussianDiffusion(torch.nn.Module):
             return t, pt
         
         elif method == 'ada':
-            pt = torch.from_numpy(self.adaptive_p).float().to(device)
+            pt = self.adaptive_p.to(device)
             t = torch.multinomial(pt, b, replacement=True)
 
             return t, pt
