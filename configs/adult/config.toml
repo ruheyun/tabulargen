@@ -29,7 +29,7 @@ weight_decay = 0.0
 batch_size = 256
 
 [sample]
-num_samples = 25642
+num_samples = 21600
 batch_size = 256
 seed = 0
 

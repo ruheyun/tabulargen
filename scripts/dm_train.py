@@ -81,8 +81,8 @@ class Trainer:
                     curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
                     self._anneal_lr(step)
-                    self._anneal_C(step)
                     step += 1
+                    self._anneal_C(step)
 
                     update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 

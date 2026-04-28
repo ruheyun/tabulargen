@@ -17,11 +17,11 @@ def data_split(data_path):
     df_final = pd.concat([X_reordered, y], axis=1)
 
     idx_train, idx_temp = train_test_split(
-        df.index, test_size=0.30, random_state=42, stratify=y
+        df.index, test_size=0.40, random_state=42, stratify=y
     )
 
     idx_val, idx_test = train_test_split(
-        idx_temp, test_size=0.50, random_state=42, stratify=y[idx_temp]
+        idx_temp, test_size=0.60, random_state=42, stratify=y[idx_temp]
     )
 
     df_final.loc[idx_train].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_train.csv'), index=False)

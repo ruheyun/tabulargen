@@ -4,7 +4,7 @@
     "n_classes": 2,
     "n_num_features": 6,
     "n_cat_features": 8,
-    "train_size": 34189,
-    "val_size": 7326,
-    "test_size": 7327
+    "train_size": 29305,
+    "val_size": 7814,
+    "test_size": 11723
 }
