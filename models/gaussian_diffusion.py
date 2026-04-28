@@ -119,6 +119,14 @@ class GaussianDiffusion(torch.nn.Module):
 
         self.register_buffer('Lt_history', torch.zeros(num_timesteps))
         self.register_buffer('Lt_count', torch.zeros(num_timesteps))
+
+        snr = alphas_cumprod / (1 - alphas_cumprod + eps)
+        log_snr = np.log(snr + eps)
+        mu = log_snr.mean()
+        sigma = log_snr.std()
+
+        weights = np.exp(- (log_snr - mu)**2 / (2 * sigma**2))
+        self.adaptive_p = weights / weights.sum()
         
     def gaussian_q_mean_variance(self, x_start, t):
         mean = (
@@ -243,6 +251,12 @@ class GaussianDiffusion(torch.nn.Module):
         elif method == 'uniform':
             t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
             pt = torch.ones_like(t).float() / self.num_timesteps
+
+            return t, pt
+        
+        elif method == 'ada':
+            pt = torch.from_numpy(self.adaptive_p).float().to(device)
+            t = torch.multinomial(pt, b, replacement=True)
 
             return t, pt
         else:
