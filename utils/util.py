@@ -2,6 +2,7 @@ import torch
 import os
 import json
 import tomllib
+import tomli_w
 import numpy as np
 import pandas as pd
 import torch.nn.functional as F
@@ -22,6 +23,17 @@ def load_config(path: Union[Path, str]) -> Any:
     return unpack_config(config)
 
 
+def dump_config(config: Any, path: Union[Path, str]) -> None:
+    with open(path, 'wb') as f:
+        tomli_w.dump(pack_config(config), f)
+    assert config == load_config(path)
+
+
+def pack_config(config: RawConfig) -> RawConfig:
+    config = cast(RawConfig, _replace(config, lambda x: x is None, _CONFIG_NONE))
+    return config
+
+
 def unpack_config(config: RawConfig) -> RawConfig:
     config = cast(RawConfig, _replace(config, lambda x: x == _CONFIG_NONE, None))
     return config
@@ -38,6 +50,15 @@ def _replace(data, condition, value):
 
     return do(data)
 
+
+def load_json(path: Union[Path, str], **kwargs) -> Any:
+    return json.loads(Path(path).read_text(), **kwargs)
+        
+
+def dump_json(x: Any, path: Union[Path, str], **kwargs) -> None:
+    kwargs.setdefault('indent', 4)
+    Path(path).write_text(json.dumps(x, **kwargs) + '\n')
+    
 
 def log_1_min_a(a):
     return torch.log(1 - a.exp() + 1e-40)

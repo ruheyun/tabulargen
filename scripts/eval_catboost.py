@@ -99,3 +99,5 @@ def train_catboost(
         os.makedirs(exp_path, exist_ok=True)
         with open(os.path.join(exp_path, 'results_catboost.json'), 'w') as f:
             json.dump(results, f)
+
+    return results
