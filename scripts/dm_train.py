@@ -45,7 +45,7 @@ class Trainer:
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
     def _anneal_C(self, step):
-        C = 0.03 + (3 - 0.03) * torch.exp(-5 * step / self.steps)
+        C = 0.03 + (3 - 0.03) * np.exp(-5 * step / self.steps)
         self.privacy_engine.max_grad_norm = C
         # self.privacy_engine._grad_sample_module.max_grad_norm = C
 
