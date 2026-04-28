@@ -282,7 +282,7 @@ class GaussianDiffusion(torch.nn.Module):
 
             total_loss_gauss = torch.zeros(b, device=device)
             for _ in range(self.dp_params['noise_multiplicity_K']):
-                t, pt = self.sample_time(b, device, 'uniform')
+                t, pt = self.sample_time(b, device, 'ada')
                 noise = torch.randn_like(x)
                 x_t = self.gaussian_q_sample(x, t, noise=noise)
 
@@ -295,7 +295,7 @@ class GaussianDiffusion(torch.nn.Module):
                 loss_gauss = self._gaussian_loss(model_out, noise)
                 total_loss_gauss += loss_gauss
             total_loss_gauss /= self.dp_params['noise_multiplicity_K']
-            return total_loss_gauss
+            return total_loss_gauss.mean()
         else:
 
             if ts == -1:
