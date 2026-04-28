@@ -90,7 +90,7 @@ class Trainer:
                     pbar.update(1)
              
         print(
-            f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']}) training done!'
+            f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']})-DP training done!'
             if self.is_dp else 'No-DP training done!'
         )
 
