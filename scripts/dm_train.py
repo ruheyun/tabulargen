@@ -15,13 +15,12 @@ from utils import update_ema, TabularDataset
 
 
 class Trainer:
-    def __init__(self, diffusion, ema_model, train_iter, lr, optimizer, dp_params, privacy_engine,
+    def __init__(self, diffusion, ema_model, train_iter, lr, optimizer, dp_params,
                 epochs, loss_history, device=torch.device('cuda:0')):
         self.diffusion = diffusion
         self.ema_model = ema_model
         self.train_iter = train_iter
         self.dp_params = dp_params
-        self.privacy_engine = privacy_engine
         self.init_lr = lr
         self.optimizer = optimizer
         self.device = device
@@ -30,6 +29,17 @@ class Trainer:
         self.epochs = epochs
         self.steps = epochs * len(train_iter)
         self.is_dp = dp_params['is_dp']
+
+        if self.is_dp:
+            self.privacy_engine = PrivacyEngine()
+            self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
+                module=self.diffusion,
+                optimizer=self.optimizer,
+                data_loader=self.train_iter,
+                max_grad_norm=self.dp_params['max_grad_norm'],
+                noise_multiplier=self.dp_params['sigma']
+            )
+            self.diffusion.compute_loss = self.diffusion._module.compute_loss
 
     def _anneal_lr(self, step):
         frac_done = step / self.steps
@@ -78,8 +88,11 @@ class Trainer:
                         curr_loss_gauss = 0.0
 
                     pbar.update(1)
-                    
-        print(f'Training done!')
+             
+        print(
+            f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']}) training done!'
+            if self.is_dp else 'No-DP training done!'
+        )
 
 
 def train(
@@ -128,7 +141,6 @@ def train(
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
 
     optimizer = torch.optim.AdamW(diffusion.parameters(), lr=lr, weight_decay=weight_decay)
-    privacy_engine = None
     trainer = Trainer(
         diffusion,
         ema_model,
@@ -136,7 +148,6 @@ def train(
         lr,
         optimizer,
         dp_params,
-        privacy_engine,
         epochs,
         loss_history,
         device
