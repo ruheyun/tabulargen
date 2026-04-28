@@ -95,7 +95,7 @@ num_trials = args.num_trials
 prefix = str(args.prefix + '_' + eval_model)
 
 pipeline = f'pipeline.py'
-base_config_path = f'config/{ds_name}/{config_name}.toml'
+base_config_path = f'configs/{ds_name}/{config_name}.toml'
 parent_path = Path(f'exp/{ds_name}/')
 exps_path = parent_path / 'many-exps'
 
