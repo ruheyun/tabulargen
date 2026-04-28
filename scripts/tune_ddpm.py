@@ -1,10 +1,12 @@
 import subprocess
-import os
-import sys
 import optuna
 import shutil
 import argparse
 from pathlib import Path
+import os
+import sys
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT)
 from utils import load_config, dump_config, load_json, dump_json, print_metrics
 
 
