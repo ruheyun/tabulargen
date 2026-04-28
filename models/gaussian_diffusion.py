@@ -127,6 +127,9 @@ class GaussianDiffusion(torch.nn.Module):
 
         weights = np.exp(- (log_snr - mu)**2 / (2 * sigma**2))
         self.adaptive_p = weights / weights.sum()
+
+        weights_s = np.sqrt(alphas_cumprod * (1 - alphas_cumprod))
+        self.snr_p = weights_s / weights_s.sum()
         
     def gaussian_q_mean_variance(self, x_start, t):
         mean = (
@@ -259,6 +262,11 @@ class GaussianDiffusion(torch.nn.Module):
             t = torch.multinomial(pt, b, replacement=True)
 
             return t, pt
+        
+        elif method == 'snr':
+            pt = self.snr_p.to(device)
+            t = torch.multinomial(pt, b, replacement=True)
+
         else:
             raise ValueError
         
@@ -287,7 +295,7 @@ class GaussianDiffusion(torch.nn.Module):
         else:
 
             if ts == -1:
-                t, pt = self.sample_time(b, device, 'ada')
+                t, pt = self.sample_time(b, device, 'snr')
             else:
                 t = torch.tensor(ts, device=device).long().expand(b)
 
