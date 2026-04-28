@@ -11,6 +11,7 @@ from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+from sklearn.metrics import precision_recall_curve
 
 RawConfig = Dict[str, Any]
 _CONFIG_NONE = '__none__'
@@ -169,9 +170,10 @@ class TabularDataset(Dataset):
 
 
 def evaluate(y_true, y_pred, task_type):
+    threshold = get_optimal_threshold_from_pr(y_true, y_pred)
     if task_type == 'binclass':
         y_prob = y_pred                      
-        y_label = (y_prob > 0.5).astype(int)
+        y_label = (y_prob > threshold).astype(int)
 
         f1 = f1_score(y_true, y_label)
         acc = accuracy_score(y_true, y_label)
@@ -192,6 +194,13 @@ def evaluate(y_true, y_pred, task_type):
         'accuracy': acc,
         'roc_auc': auc
     }
+
+
+def get_optimal_threshold_from_pr(y_true, y_prob):
+    precision, recall, thresholds = precision_recall_curve(y_true, y_prob)
+    f1_scores = 2 * precision[1:] * recall[1:] / (precision[1:] + recall[1:] + 1e-8)
+    best_idx = np.argmax(f1_scores)
+    return thresholds[best_idx]
 
 
 def print_metrics(results):
