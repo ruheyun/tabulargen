@@ -29,6 +29,9 @@ class Trainer:
         self.epochs = epochs
         self.steps = epochs * len(train_iter)
         self.is_dp = dp_params['is_dp']
+        self.epsilon = dp_params['epsilon']
+        self.max_grad_norm = dp_params['max_grad_norm']
+        self.sigma = dp_params['sigma']
 
         if self.is_dp:
             self.privacy_engine = PrivacyEngine()
@@ -36,8 +39,8 @@ class Trainer:
                 module=self.diffusion,
                 optimizer=self.optimizer,
                 data_loader=self.train_iter,
-                max_grad_norm=self.dp_params['max_grad_norm'],
-                noise_multiplier=self.dp_params['sigma']
+                max_grad_norm=self.max_grad_norm,
+                noise_multiplier=self.sigma
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
 
