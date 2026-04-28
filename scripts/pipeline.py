@@ -42,7 +42,7 @@ def main():
 
     save_config(raw_config['exp_path'], raw_config)
 
-    # data_process(data_path=raw_config['data_path'], exp_path=raw_config['exp_path'], num_encoder='quantile', cat_encoder='alb')
+    data_process(data_path=raw_config['data_path'], exp_path=raw_config['exp_path'], num_encoder='quantile', cat_encoder='alb')
 
 
     if args.train:
