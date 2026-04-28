@@ -51,6 +51,7 @@ class GaussianDiffusion(torch.nn.Module):
         gaussian_parametrization='eps',
         parametrization='x0',
         scheduler='cosine',
+        dp_params=None,
         device=torch.device('cpu'),
     ):
         
@@ -65,6 +66,7 @@ class GaussianDiffusion(torch.nn.Module):
         self.num_timesteps = num_timesteps
         self.parametrization = parametrization
         self.scheduler = scheduler
+        self.dp_params = dp_params
 
         betas = get_named_beta_schedule(scheduler, num_timesteps)
         betas = torch.tensor(betas.astype('float64'))
@@ -279,7 +281,7 @@ class GaussianDiffusion(torch.nn.Module):
         if is_dp:
 
             total_loss_gauss = torch.zeros(b, device=device)
-            for _ in range(self.dp_params['common']['noise_multiplicity_K']):
+            for _ in range(self.dp_params['noise_multiplicity_K']):
                 t, pt = self.sample_time(b, device, 'uniform')
                 noise = torch.randn_like(x)
                 x_t = self.gaussian_q_sample(x, t, noise=noise)
@@ -292,7 +294,7 @@ class GaussianDiffusion(torch.nn.Module):
 
                 loss_gauss = self._gaussian_loss(model_out, noise)
                 total_loss_gauss += loss_gauss
-            total_loss_gauss /= self.dp_params['common']['noise_multiplicity_K']
+            total_loss_gauss /= self.dp_params['noise_multiplicity_K']
             return total_loss_gauss.mean()
         else:
 

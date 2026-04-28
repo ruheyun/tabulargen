@@ -129,6 +129,7 @@ def train(
         gaussian_loss_type=gaussian_loss_type,
         num_timesteps=num_timesteps,
         scheduler=scheduler,
+        dp_params=dp_params,
         device=device
     )
     diffusion.to(device)
