@@ -5,7 +5,7 @@ import pandas as pd
 from data_encode import DataWrapper, LabelWrapper
 
 
-def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb'):
+def data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb'):
     os.makedirs(exp_path, exist_ok=True)
     data_name = os.path.basename(data_path)
 

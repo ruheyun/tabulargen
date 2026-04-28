@@ -33,7 +33,7 @@ class DataWrapper:
             elif self.num_encoder == "standard":
                 self.num_normalizer[col] = StandardScaler()
             elif self.num_encoder == "minmax":
-                self.num_normalizer[col] = MinMaxScaler()
+                self.num_normalizer[col] = MinMaxScaler(feature_range=(-1, 1))
             else:
                 raise ValueError(f"Unknown num encoder: {self.num_encoder}")
             self.num_normalizer[col].fit(col_data.values.reshape(-1, 1))
