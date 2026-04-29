@@ -5,7 +5,7 @@ import pandas as pd
 from pprint import pprint
 from catboost import CatBoostClassifier
 from sklearn.preprocessing import LabelEncoder
-from utils import evaluate, print_metrics
+from utils import evaluate, print_metrics, get_optimal_threshold_from_pr
 
 
 def train_catboost(
@@ -88,8 +88,10 @@ def train_catboost(
         for k, v in X.items()
     }
 
+    threshold = get_optimal_threshold_from_pr(y['val'], predictions['val'])
+
     results = {
-        k: evaluate(y[k], predictions[k], info['task_type'])
+        k: evaluate(y[k], predictions[k], info['task_type'], threshold)
         for k in predictions
     }
 

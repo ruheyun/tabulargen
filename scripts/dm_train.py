@@ -45,7 +45,7 @@ class Trainer:
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
     def _anneal_C(self, step):
-        C = 1 + (2 - 1) * np.exp(-5 * step / self.steps)
+        C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
         self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
@@ -81,7 +81,7 @@ class Trainer:
 
                     self._anneal_lr(step)
                     step += 1
-                    self._anneal_C(step)
+                    # self._anneal_C(step)
 
                     update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 
