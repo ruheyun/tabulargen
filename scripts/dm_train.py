@@ -62,12 +62,12 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _run_step(self, x, out_dict, is_dp):
+    def _run_step(self, x, out_dict):
         x = x.to(self.device)
         for k in out_dict:
             out_dict[k] = out_dict[k].long().to(self.device)
         self.optimizer.zero_grad(set_to_none=True)
-        loss = self.diffusion.compute_loss(x, out_dict, is_dp=is_dp)
+        loss = self.diffusion.compute_loss(x, out_dict, is_dp=self.is_dp)
         loss.backward()
 
         # self.analyzer.log_stats()
@@ -85,7 +85,7 @@ class Trainer:
             for epoch in range(self.epochs):
                 for x, out_dict in self.train_iter:
                     out_dict = {'y': out_dict}
-                    batch_loss_gauss = self._run_step(x, out_dict, is_dp=self.is_dp)
+                    batch_loss_gauss = self._run_step(x, out_dict)
 
                     curr_count += len(x)
                     curr_loss_gauss += batch_loss_gauss.item() * len(x)
