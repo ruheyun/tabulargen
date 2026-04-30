@@ -70,11 +70,11 @@ class Trainer:
         loss = self.diffusion.compute_loss(x, out_dict, is_dp=is_dp)
         loss.backward()
 
-        self.analyzer.log_stats()
+        # self.analyzer.log_stats()
 
         self.optimizer.step()
 
-        self.analyzer.clear_grad_sample()
+        # self.analyzer.clear_grad_sample()
         return loss
 
     def run_loop(self):
