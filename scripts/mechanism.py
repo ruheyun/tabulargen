@@ -5,7 +5,7 @@ import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
-from utils import TabularDataset, load_config
+from utils import TabularDataset, load_config, dump_config
 
 
 def mechanism(
@@ -31,6 +31,7 @@ def mechanism(
             )
     
     print(noise_multiplier)
+    return noise_multiplier
 
 
 if __name__ == '__main__':
@@ -38,9 +39,13 @@ if __name__ == '__main__':
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
     args = parser.parse_args()
     raw_config = load_config(args.config)
-    mechanism(
+    noise = mechanism(
         exp_path=raw_config['exp_path'], 
         epochs=raw_config['train']['main']['epochs'], 
         batch_size=raw_config['train']['main']['batch_size'], 
         target_epsilon=raw_config['dp']['epsilon']
     )
+
+    raw_config['dp']['sigma'] = noise
+
+    dump_config(raw_config, args.config)

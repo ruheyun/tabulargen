@@ -69,7 +69,7 @@ def train_catboost(
     model = CatBoostClassifier(
         loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
         **catboost_config,
-        eval_metric='TotalF1',
+        eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'MacroF1'
         random_seed=seed,
         class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
         allow_writing_files=False
