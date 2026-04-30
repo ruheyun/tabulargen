@@ -15,7 +15,7 @@ class GradNormAnalyzer:
         with open(self.csv_path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([
-                "step", "C95", "mean", "std", "max", "min"
+                "C95", "mean", "std", "max", "min"
             ])
 
     def compute_per_sample_norms(self):
@@ -44,7 +44,7 @@ class GradNormAnalyzer:
 
         norms_np = np.array(norms)
 
-        C95 = np.percentile(norms_np, 95)
+        C95 = np.percentile(norms_np, 50)
         mean = np.mean(norms_np)
         std = np.std(norms_np)
         maxv = np.max(norms_np)
@@ -53,4 +53,9 @@ class GradNormAnalyzer:
         with open(self.csv_path, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([C95, mean, std, maxv, minv])
+
+    def clear_grad_sample(self):
+        for p in self.model.parameters():
+            if hasattr(p, "grad_sample"):
+                p.grad_sample = None
     

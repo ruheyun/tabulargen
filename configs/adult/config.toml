@@ -38,7 +38,7 @@ eval_model = "catboost"
 eval_type = "synthetic"
 
 [dp]
-is_dp = false
+is_dp = true
 epsilon = 10
 sigma = 0.605316162109375
 max_grad_norm = 1.0

@@ -73,6 +73,8 @@ class Trainer:
         self.analyzer.log_stats()
 
         self.optimizer.step()
+
+        self.analyzer.clear_grad_sample()
         return loss
 
     def run_loop(self):
