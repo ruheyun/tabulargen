@@ -1,4 +1,5 @@
 from copy import deepcopy
+import csv
 import torch
 import numpy as np
 import delu
@@ -12,6 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
+from analyze_grad import GradNormAnalyzer
 
 
 class Trainer:
@@ -43,6 +45,10 @@ class Trainer:
                 noise_multiplier=self.sigma
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
+        else:
+            self.analyzer = GradNormAnalyzer(self.diffusion)
+            self.diffusion = self.analyzer.model
+            self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
@@ -63,6 +69,9 @@ class Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         loss = self.diffusion.compute_loss(x, out_dict, is_dp=is_dp)
         loss.backward()
+
+        self.analyzer.log_stats()
+
         self.optimizer.step()
         return loss
 
