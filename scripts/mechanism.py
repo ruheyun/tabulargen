@@ -27,7 +27,7 @@ def mechanism(
                 target_delta=target_delta,
                 sample_rate=sample_rate,
                 epochs=epochs,
-                accountant='prv',
+                accountant='rdp',
             )
     
     print(noise_multiplier)
