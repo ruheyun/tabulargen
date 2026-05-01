@@ -1,5 +1,6 @@
 from copy import deepcopy
 import csv
+import json
 import torch
 import numpy as np
 import delu
@@ -18,7 +19,7 @@ from analyze_grad import GradNormAnalyzer
 
 class Trainer:
     def __init__(self, diffusion, ema_model, train_iter, lr, optimizer, dp_params,
-                epochs, loss_history, device=torch.device('cuda:0')):
+                epochs, info, loss_history, device=torch.device('cuda:0')):
         self.diffusion = diffusion
         self.ema_model = ema_model
         self.train_iter = train_iter
@@ -30,6 +31,7 @@ class Trainer:
         self.log_every = 10
         self.epochs = epochs
         self.steps = epochs * len(train_iter)
+        self.info = info
         self.is_dp = dp_params['is_dp']
         self.epsilon = dp_params['epsilon']
         self.max_grad_norm = dp_params['max_grad_norm']
@@ -62,6 +64,21 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
+    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_max=3):
+        p_y = self.info['p_y']
+        p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
+        w_y = p_y_smooth ** alpha
+        w_y = w_y / w_y.mean()
+        w_y = np.clip(w_y, 1.0, w_max)
+        w_y_tensor = torch.tensor(w_y, device=y.device)
+
+        for param in self.diffusion.parameters():
+            if hasattr(param, 'grad_sample') and param.grad_sample is not None:
+                w_expanded = w_y_tensor[y]
+                while w_expanded.dim() < param.grad_sample.dim():
+                    w_expanded = w_expanded.unsqueeze(-1)
+                param.grad_sample *= w_expanded
+
     def _run_step(self, x, out_dict):
         x = x.to(self.device)
         for k in out_dict:
@@ -71,6 +88,7 @@ class Trainer:
         loss.backward()
 
         # self.analyzer.log_stats()
+        # self._gradient_rescaling(out_dict['y'])
 
         self.optimizer.step()
 
@@ -130,6 +148,9 @@ def train(
 ):
     delu.random.seed(seed)
 
+    with open(os.path.join(exp_path, 'info.json'), 'r') as f:
+        info = json.load(f)
+
     dataset = TabularDataset(exp_path)
 
     num_features = dataset.X_dim
@@ -169,6 +190,7 @@ def train(
         optimizer,
         dp_params,
         epochs,
+        info,
         loss_history,
         device
     )
