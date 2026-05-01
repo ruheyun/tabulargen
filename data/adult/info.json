@@ -1,1 +1,10 @@
-{"name": "adult", "task_type": "binclass", "n_classes": 2, "n_num_features": 6, "n_cat_features": 8, "train_size": 29305, "val_size": 9768, "test_size": 9769}
+{
+    "name": "adult",
+    "task_type": "binclass",
+    "n_classes": 2,
+    "n_num_features": 6,
+    "n_cat_features": 8,
+    "train_size": 29305,
+    "val_size": 9768,
+    "test_size": 9769
+}

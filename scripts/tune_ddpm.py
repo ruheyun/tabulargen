@@ -36,9 +36,11 @@ def objective(trial):
 
     lr = trial.suggest_float('lr', 0.00001, 0.003, log=True)
     d_layers = _suggest_mlp_layers(trial)
+    max_grad_norm = trial.suggest_categorical('max_grad_norm', [1, 3, 5])
 
     base_config['train']['main']['lr'] = lr
     base_config['model_params']['rtdl_params']['d_layers'] = d_layers
+    base_config['dp']['max_grad_norm'] = max_grad_norm
 
     exp_dir = exps_path / f"{trial.number}"
     base_config['exp_path'] = str(exp_dir)
@@ -81,7 +83,7 @@ parser.add_argument('--ds_name', type=str, default='adult')
 parser.add_argument('--cf_name', type=str, default='config')
 parser.add_argument('--eval_model', type=str, default='catboost')
 parser.add_argument('--prefix', type=str, default='dm')
-parser.add_argument('--num_trials', type=int, default=20)
+parser.add_argument('--num_trials', type=int, default=30)
 
 args = parser.parse_args()
 

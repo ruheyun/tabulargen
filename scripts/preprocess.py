@@ -3,6 +3,7 @@ import json
 import pickle
 import pandas as pd
 from data_encode import DataWrapper, LabelWrapper
+from mechanism import dp_histogram
 
 
 def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb'):
@@ -50,8 +51,14 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_val_encoding.to_csv(os.path.join(exp_path, 'val.csv'), index=False)
     df_test_encoding.to_csv(os.path.join(exp_path, 'test.csv'), index=False)
 
-    label_counts = y_train_encoding.value_counts().sort_index()
-    p_y = (label_counts / label_counts.sum()).values
+    # label_counts = y_train_encoding.value_counts().sort_index()
+    # p_y = (label_counts / label_counts.sum()).values
+    p_y = dp_histogram(
+        y_train_encoding,
+        num_classes=info['n_classes'],
+        epsilon=0.1,
+        delta=1e-5
+    )
 
     info['p_y'] = p_y.tolist()
 
