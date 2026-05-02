@@ -4,7 +4,7 @@ device = "cuda:0"
 seed = 0
 
 [model_params]
-d_in = 34
+d_in = 16
 is_y_cond = true
 num_classes = 2
 
@@ -27,7 +27,7 @@ weight_decay = 0.0
 batch_size = 128
 
 [sample]
-num_samples = 21600
+num_samples = 9000
 batch_size = 256
 seed = 4
 
@@ -38,7 +38,7 @@ eval_type = "synthetic"
 [dp]
 is_dp = true
 epsilon = 10
-sigma = 0.546875
+sigma = 0.71258544921875
 max_grad_norm = 1
 delta = 1e-05
 noise_multiplicity_K = 3

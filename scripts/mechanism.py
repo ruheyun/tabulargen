@@ -56,7 +56,7 @@ def mechanism(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', metavar='FILE', default='configs/default/config.toml')
+    parser.add_argument('--config', metavar='FILE', default='configs/bank/config.toml')
     args = parser.parse_args()
     raw_config = load_config(args.config)
     noise = mechanism(
