@@ -46,5 +46,5 @@ def data_split(data_path):
 
 
 if __name__ == '__main__':
-    data_path = 'data/default'
+    data_path = 'data/bank'
     data_split(data_path)

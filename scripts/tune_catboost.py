@@ -41,7 +41,7 @@ def objective(trial):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ds_name', type=str, default='adult')
+parser.add_argument('--ds_name', type=str, default='bank')
 parser.add_argument('--n_trials', type=int, default=100)
 
 args = parser.parse_args()
