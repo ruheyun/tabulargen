@@ -1,17 +1,17 @@
-data_path = "data/adult"
-exp_path = "exp/adult"
+data_path = "data/default"
+exp_path = "exp/default"
 device = "cuda:0"
 seed = 0
 
 [model_params]
-d_in = 34
-is_y_cond = true
+d_in = 44
 num_classes = 2
+is_y_cond = true
 
 [model_params.rtdl_params]
 d_layers = [
-    512,
-    256,
+    1024,
+    1024,
 ]
 dropout = 0.0
 
@@ -22,12 +22,12 @@ scheduler = "cosine"
 
 [train.main]
 epochs = 25
-lr = 0.0006982179585993695
+lr = 0.0007286257561853825
 weight_decay = 0.0
 batch_size = 128
 
 [sample]
-num_samples = 21600
+num_samples = 18000
 batch_size = 256
 seed = 4
 
@@ -37,8 +37,8 @@ eval_type = "synthetic"
 
 [dp]
 is_dp = true
-epsilon = 10
-sigma = 0.546875
-max_grad_norm = 3
+epsilon = 1
+sigma = 1.4453125
+max_grad_norm = 1.0
 delta = 1e-05
 noise_multiplicity_K = 3
