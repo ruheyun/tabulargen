@@ -39,6 +39,6 @@ eval_type = "synthetic"
 is_dp = true
 epsilon = 10
 sigma = 0.71258544921875
-max_grad_norm = 1
+max_grad_norm = 1.0
 delta = 1e-05
 noise_multiplicity_K = 3
