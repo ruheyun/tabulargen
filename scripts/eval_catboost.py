@@ -88,10 +88,10 @@ def train_catboost(
         for k, v in X.items()
     }
 
-    threshold = get_optimal_threshold_from_pr(y['val'], predictions['val'])
+    # threshold = get_optimal_threshold_from_pr(y['val'], predictions['val'])
 
     results = {
-        k: evaluate(y[k], predictions[k], info['task_type'], threshold)
+        k: evaluate(y[k], predictions[k], info['task_type'])
         for k in predictions
     }
 

@@ -169,7 +169,7 @@ class TabularDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 
-def evaluate(y_true, y_pred, task_type, threshold):
+def evaluate(y_true, y_pred, task_type, threshold=0.5):
     if task_type == 'binclass':
         y_prob = y_pred                      
         y_label = (y_prob > threshold).astype(int)
