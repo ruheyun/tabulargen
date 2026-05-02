@@ -5,6 +5,9 @@ import pandas as pd
 from pprint import pprint
 from catboost import CatBoostClassifier
 from sklearn.preprocessing import LabelEncoder
+import sys
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT)
 from utils import evaluate, print_metrics, get_optimal_threshold_from_pr
 
 
