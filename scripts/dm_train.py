@@ -64,13 +64,13 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_max=3):
+    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_max=5):
         p_y = self.info['p_y']
         p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
         p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
         w_y = p_y_smooth ** alpha
         w_y = w_y / w_y.mean()
-        w_y = torch.clamp(w_y, min=1.0, max=w_max)
+        w_y = torch.clamp(w_y, max=w_max)
 
         for param in self.diffusion._denoise_fn.parameters():
             if hasattr(param, 'grad_sample') and param.grad_sample is not None:
