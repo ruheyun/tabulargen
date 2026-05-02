@@ -66,15 +66,15 @@ class Trainer:
 
     def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_max=3):
         p_y = self.info['p_y']
+        p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
         p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
         w_y = p_y_smooth ** alpha
         w_y = w_y / w_y.mean()
-        w_y = np.clip(w_y, 1.0, w_max)
-        w_y_tensor = torch.tensor(w_y, device=y.device)
+        w_y = torch.clamp(w_y, min=1.0, max=w_max)
 
         for param in self.diffusion.parameters():
             if hasattr(param, 'grad_sample') and param.grad_sample is not None:
-                w_expanded = w_y_tensor[y]
+                w_expanded = w_y[y]
                 while w_expanded.dim() < param.grad_sample.dim():
                     w_expanded = w_expanded.unsqueeze(-1)
                 param.grad_sample *= w_expanded
