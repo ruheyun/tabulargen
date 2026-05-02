@@ -88,7 +88,7 @@ class Trainer:
         loss.backward()
 
         # self.analyzer.log_stats()
-        self._gradient_rescaling(out_dict['y'])
+        # self._gradient_rescaling(out_dict['y'])
 
         self.optimizer.step()
 
