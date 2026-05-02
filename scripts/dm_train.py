@@ -72,7 +72,7 @@ class Trainer:
         w_y = w_y / w_y.mean()
         w_y = torch.clamp(w_y, min=1.0, max=w_max)
 
-        for param in self.diffusion.parameters():
+        for param in self.diffusion._denoise_fn.parameters():
             if hasattr(param, 'grad_sample') and param.grad_sample is not None:
                 w_expanded = w_y[y]
                 while w_expanded.dim() < param.grad_sample.dim():
