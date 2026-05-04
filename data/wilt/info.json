@@ -1,0 +1,1 @@
+{"name": "wilt", "task_type": "binclass", "n_classes": 2, "n_num_features": 5, "n_cat_features": 0, "train_size": 2603, "val_size": 868, "test_size": 868}

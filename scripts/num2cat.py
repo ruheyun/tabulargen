@@ -1,7 +1,9 @@
 import pandas as pd
 import string
 
-df = pd.read_csv('data/bank/bank.csv')
+data_name = 'market'
+
+df = pd.read_csv(f'data/{data_name}/{data_name}.csv')
 
 threshold = 15  # 唯一值阈值
 
@@ -20,4 +22,4 @@ for col in df.columns:
             mapping = {val: f'{prefix}{i}' for i, val in enumerate(sorted(unique_vals))}
             df[col] = df[col].map(mapping)
 
-df.to_csv('data/bank.csv', index=False)
+df.to_csv(f'data/{data_name}/{data_name}.csv', index=False)

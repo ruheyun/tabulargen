@@ -1,0 +1,1 @@
+{"name": "credit", "task_type": "binclass", "n_classes": 2, "n_num_features": 3, "n_cat_features": 17, "train_size": 600, "val_size": 200, "test_size": 200}

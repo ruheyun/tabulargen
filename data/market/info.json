@@ -1,0 +1,1 @@
+{"name": "market", "task_type": "binclass", "n_classes": 2, "n_num_features": 7, "n_cat_features": 9, "train_size": 27126, "val_size": 9042, "test_size": 9043}

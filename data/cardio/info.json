@@ -1,0 +1,1 @@
+{"name": "cardio", "task_type": "binclass", "n_classes": 2, "n_num_features": 5, "n_cat_features": 6, "train_size": 42000, "val_size": 14000, "test_size": 14000}
