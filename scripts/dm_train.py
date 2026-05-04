@@ -52,15 +52,15 @@ class Trainer:
             self.diffusion = self.analyzer.model
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
-    def _anneal_C(self, step):
-        C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
-        self.optimizer.max_grad_norm = C
+    # def _anneal_C(self, step):
+    #     C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
+    #     self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
         frac_done = step / self.steps
         lr = self.init_lr * (1 - frac_done)
-        if lr < self.init_lr * 0.3:
-            return
+        # if lr < self.init_lr * 0.3:
+        #     return
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
