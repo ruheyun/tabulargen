@@ -66,7 +66,7 @@ class Trainer:
             param_group["lr"] = lr
 
     def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_max=5):
-        p_y = self.info['p_y']
+        p_y = self.info['dp_p_y']
         p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
         p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
         w_y = p_y_smooth ** alpha
