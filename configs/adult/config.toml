@@ -11,7 +11,9 @@ num_classes = 2
 [model_params.rtdl_params]
 d_layers = [
     512,
-    256,
+    1024,
+    1024,
+    512,
 ]
 dropout = 0.0
 
@@ -21,13 +23,13 @@ gaussian_loss_type = "mse"
 scheduler = "cosine"
 
 [train.main]
-epochs = 100
+epochs = 50
 lr = 0.0006982179585993695
 weight_decay = 0.0
 batch_size = 128
 
 [sample]
-num_samples = 21600
+num_samples = 29305
 batch_size = 256
 seed = 4
 
@@ -36,9 +38,9 @@ eval_model = "catboost"
 eval_type = "synthetic"
 
 [dp]
-is_dp = true
+is_dp = false
 epsilon = 10
-sigma = 0.6695556640625
+sigma = 0.599212646484375
 max_grad_norm = 3
 delta = 1e-05
 noise_multiplicity_K = 3

@@ -36,6 +36,7 @@ class Trainer:
         self.epsilon = dp_params['epsilon']
         self.max_grad_norm = dp_params['max_grad_norm']
         self.sigma = dp_params['sigma']
+        self.is_print_grad = False
 
         if self.is_dp:
             self.privacy_engine = PrivacyEngine()
@@ -47,7 +48,7 @@ class Trainer:
                 noise_multiplier=self.sigma
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
-        else:
+        elif self.is_print_grad:
             self.analyzer = GradNormAnalyzer(self.diffusion)
             self.diffusion = self.analyzer.model
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
