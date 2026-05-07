@@ -70,7 +70,7 @@ class Trainer:
         p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
         p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
         w_y = p_y_smooth ** alpha
-        w_y = w_y / w_y.mean()
+        # w_y = w_y / w_y.mean()
         w_y = torch.clamp(w_y, max=w_max)
 
         for param in self.diffusion._denoise_fn.parameters():
