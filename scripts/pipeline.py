@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     # 启用训练、采样、测试
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
-    parser.add_argument('--train', action='store_true', default=False)
+    parser.add_argument('--train', action='store_true', default=True)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
     # 评估模型设置
