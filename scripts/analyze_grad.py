@@ -44,7 +44,7 @@ class GradNormAnalyzer:
 
         norms_np = np.array(norms)
 
-        C95 = np.percentile(norms_np, 50)
+        C95 = np.percentile(norms_np, 95)
         mean = np.mean(norms_np)
         std = np.std(norms_np)
         maxv = np.max(norms_np)

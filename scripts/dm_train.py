@@ -36,7 +36,7 @@ class Trainer:
         self.epsilon = dp_params['epsilon']
         self.max_grad_norm = dp_params['max_grad_norm']
         self.sigma = dp_params['sigma']
-        self.is_print_grad = True
+        self.is_print_grad = False
 
         if self.is_dp:
             self.privacy_engine = PrivacyEngine()
@@ -88,12 +88,12 @@ class Trainer:
         loss = self.diffusion.compute_loss(x, out_dict, is_dp=self.is_dp)
         loss.backward()
 
-        self.analyzer.log_stats()
+        # self.analyzer.log_stats()
         # self._gradient_rescaling(out_dict['y'])
 
         self.optimizer.step()
 
-        self.analyzer.clear_grad_sample()
+        # self.analyzer.clear_grad_sample()
         return loss
 
     def run_loop(self):
