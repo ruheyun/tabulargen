@@ -22,6 +22,7 @@ def sample(
     scheduler='cosine',
     device=torch.device('cuda:0'),
     seed=0,
+    disbalance='uniform'
 ):
     delu.random.seed(seed)
 
@@ -49,7 +50,10 @@ def sample(
     diffusion.eval()
 
     print('Starting sampling...')
-    empirical_class_dist = torch.tensor(info['p_y'], dtype=torch.float32)
+    if disbalance == 'uniform':
+        empirical_class_dist = torch.tensor([0.5, 0.5], dtype=torch.float32)
+    else:
+        empirical_class_dist = torch.tensor(info['p_y'], dtype=torch.float32)
     
     x_gen, y_gen = diffusion.sample_all(num_samples, batch_size, empirical_class_dist)
 
