@@ -36,7 +36,7 @@ class Trainer:
         self.epsilon = dp_params['epsilon']
         self.max_grad_norm = dp_params['max_grad_norm']
         self.sigma = dp_params['sigma']
-        self.is_print_grad = False
+        self.is_print_grad = True
 
         if self.is_dp:
             self.privacy_engine = PrivacyEngine()
@@ -53,9 +53,9 @@ class Trainer:
             self.diffusion = self.analyzer.model
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
-    # def _anneal_C(self, step):
-    #     C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
-    #     self.optimizer.max_grad_norm = C
+    def _anneal_C(self, step):
+        C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
+        self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
         frac_done = step / self.steps
@@ -65,7 +65,7 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_min=1, w_max=5):
+    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_min=0.5, w_max=5):
         p_y = self.info['dp_p_y']
         p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
         p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
@@ -88,12 +88,12 @@ class Trainer:
         loss = self.diffusion.compute_loss(x, out_dict, is_dp=self.is_dp)
         loss.backward()
 
-        # self.analyzer.log_stats()
-        self._gradient_rescaling(out_dict['y'])
+        self.analyzer.log_stats()
+        # self._gradient_rescaling(out_dict['y'])
 
         self.optimizer.step()
 
-        # self.analyzer.clear_grad_sample()
+        self.analyzer.clear_grad_sample()
         return loss
 
     def run_loop(self):
