@@ -174,7 +174,7 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         y_prob = y_pred                      
         y_label = (y_prob > threshold).astype(int)
 
-        f1 = f1_score(y_true, y_label)
+        f1 = f1_score(y_true, y_label, average='weighted')
         acc = accuracy_score(y_true, y_label)
         auc = roc_auc_score(y_true, y_prob)
 
