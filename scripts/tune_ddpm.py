@@ -35,11 +35,11 @@ def objective(trial):
     base_config = load_config(base_config_path)
 
     lr = trial.suggest_float('lr', 0.00001, 0.003, log=True)
-    d_layers = _suggest_mlp_layers(trial)
+    # d_layers = _suggest_mlp_layers(trial)
     # max_grad_norm = trial.suggest_categorical('max_grad_norm', [1, 3, 5])
 
     base_config['train']['main']['lr'] = lr
-    base_config['model_params']['rtdl_params']['d_layers'] = d_layers
+    # base_config['model_params']['rtdl_params']['d_layers'] = d_layers
     # base_config['dp']['max_grad_norm'] = max_grad_norm
 
     exp_dir = exps_path / f"{trial.number}"

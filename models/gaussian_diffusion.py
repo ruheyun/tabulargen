@@ -299,7 +299,7 @@ class GaussianDiffusion(torch.nn.Module):
         else:
 
             if ts == -1:
-                t, pt = self.sample_time(b, device, 'snr')
+                t, pt = self.sample_time(b, device, 'uniform')
             else:
                 t = torch.tensor(ts, device=device).long().expand(b)
 
