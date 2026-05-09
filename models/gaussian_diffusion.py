@@ -278,43 +278,41 @@ class GaussianDiffusion(torch.nn.Module):
     def compute_loss(self, x, out_dict, is_dp=False, ts=-1):
         b = x.shape[0]
         device = x.device
-        if is_dp:
 
-            total_loss_gauss = torch.zeros(b, device=device)
-            for _ in range(self.dp_params['noise_multiplicity_K']):
-                t, pt = self.sample_time(b, device, 'uniform')
-                noise = torch.randn_like(x)
-                x_t = self.gaussian_q_sample(x, t, noise=noise)
+        # total_loss_gauss = torch.zeros(b, device=device)
+        # for _ in range(self.dp_params['noise_multiplicity_K']):
+        #     t, pt = self.sample_time(b, device, 'uniform')
+        #     noise = torch.randn_like(x)
+        #     x_t = self.gaussian_q_sample(x, t, noise=noise)
 
-                model_out = self._denoise_fn(
-                    x_t,
-                    t,
-                    **out_dict
-                )
+        #     model_out = self._denoise_fn(
+        #         x_t,
+        #         t,
+        #         **out_dict
+        #     )
 
-                loss_gauss = self._gaussian_loss(model_out, noise)
-                total_loss_gauss += loss_gauss
-            total_loss_gauss /= self.dp_params['noise_multiplicity_K']
-            return total_loss_gauss.mean()
+        #     loss_gauss = self._gaussian_loss(model_out, noise)
+        #     total_loss_gauss += loss_gauss
+        # total_loss_gauss /= self.dp_params['noise_multiplicity_K']
+        # return total_loss_gauss.mean()
+    
+        if ts == -1:
+            t, pt = self.sample_time(b, device, 'uniform')
         else:
+            t = torch.tensor(ts, device=device).long().expand(b)
 
-            if ts == -1:
-                t, pt = self.sample_time(b, device, 'uniform')
-            else:
-                t = torch.tensor(ts, device=device).long().expand(b)
+        noise = torch.randn_like(x)
+        x_t = self.gaussian_q_sample(x, t, noise=noise)
 
-            noise = torch.randn_like(x)
-            x_t = self.gaussian_q_sample(x, t, noise=noise)
+        model_out = self._denoise_fn(
+            x_t,
+            t,
+            **out_dict
+        )
 
-            model_out = self._denoise_fn(
-                x_t,
-                t,
-                **out_dict
-            )
+        loss_gauss = self._gaussian_loss(model_out, noise)
 
-            loss_gauss = self._gaussian_loss(model_out, noise)
-
-            return loss_gauss.mean()
+        return loss_gauss.mean()
 
 
     def sample_all(self, num_samples, batch_size, y_dist=None):
