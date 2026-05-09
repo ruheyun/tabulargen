@@ -83,7 +83,7 @@ parser.add_argument('--ds_name', type=str, default='adult')
 parser.add_argument('--cf_name', type=str, default='config')
 parser.add_argument('--eval_model', type=str, default='catboost')
 parser.add_argument('--prefix', type=str, default='dm')
-parser.add_argument('--num_trials', type=int, default=30)
+parser.add_argument('--num_trials', type=int, default=10)
 
 args = parser.parse_args()
 
