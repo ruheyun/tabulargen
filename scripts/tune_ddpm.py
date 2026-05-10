@@ -131,7 +131,9 @@ for sample_seed in range(5):
     subprocess.run([
         python_exec, f'scripts/{pipeline}',
         '--config', f'{best_config_path}',
-        '--sample', '--eval'
+        '--sample', 
+        '--eval',
+        '--sample_seed', f'{sample_seed}'
     ], check=True)
 
     report_path = str(Path(best_config['exp_path']) / f'results_{eval_model}.json')

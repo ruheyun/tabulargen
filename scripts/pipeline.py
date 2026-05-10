@@ -26,11 +26,15 @@ def main():
     parser.add_argument('--train', action='store_true', default=False)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
+    parser.add_argument('--sample_seed', type=int, default=-1)
     # 评估模型设置
     parser.add_argument('--eval_model', type=str, choices=['catboost', 'simple'], default='catboost')
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
+
+    if args.sample_seed != -1:
+        raw_config['sample']['seed'] = args.sample_seed
 
     if args.eval_model != 'catboost':
         raw_config['eval']['type']['eval_model'] = args.eval_model
