@@ -7,6 +7,7 @@ import delu
 from tqdm import trange
 import pandas as pd
 from opacus import PrivacyEngine
+from opacus.accountants.utils import get_noise_multiplier
 from torch.utils.data import DataLoader
 import os
 import sys
@@ -34,18 +35,28 @@ class Trainer:
         self.info = info
         self.is_dp = dp_params['is_dp']
         self.epsilon = dp_params['epsilon']
+        self.delta = dp_params['delta']
         self.max_grad_norm = dp_params['max_grad_norm']
-        self.sigma = dp_params['sigma']
+        # self.sigma = dp_params['sigma']
         self.is_print_grad = False
 
         if self.is_dp:
+
+            noise_multiplier = get_noise_multiplier(
+                target_epsilon=self.epsilon,
+                target_delta=self.delta,
+                sample_rate=1 / len(train_iter),
+                epochs=self.epochs,
+                accountant='prv',
+            )
+
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
                 module=self.diffusion,
                 optimizer=self.optimizer,
                 data_loader=self.train_iter,
                 max_grad_norm=self.max_grad_norm,
-                noise_multiplier=self.sigma
+                noise_multiplier=noise_multiplier
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
         elif self.is_print_grad:
@@ -135,10 +146,10 @@ class Trainer:
 
 def train(
         exp_path='exp/adult',
-        epochs=100,
-        lr=1e-4,
-        weight_decay=1e-4,
-        batch_size=256,
+        epochs=50,
+        lr=3e-4,
+        weight_decay=0.0,
+        batch_size=128,
         model_params=None,
         num_timesteps=500,
         gaussian_loss_type='mse',

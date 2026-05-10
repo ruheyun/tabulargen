@@ -120,34 +120,34 @@ os.makedirs(parent_path / f'{prefix}_best', exist_ok=True)
 dump_config(best_config, best_config_path)
 # dump_json(optuna.importance.get_param_importances(study), parent_path / f'{prefix}_best/importance.json')
 
-subprocess.run([
-    python_exec, f'scripts/{pipeline}',
-    '--config', f'{best_config_path}',
-    '--train'
-], check=True)
+# subprocess.run([
+#     python_exec, f'scripts/{pipeline}',
+#     '--config', f'{best_config_path}',
+#     '--train'
+# ], check=True)
 
-all_report = []
-for sample_seed in range(5):
-    subprocess.run([
-        python_exec, f'scripts/{pipeline}',
-        '--config', f'{best_config_path}',
-        '--sample', 
-        '--eval',
-        '--sample_seed', f'{sample_seed}'
-    ], check=True)
+# all_report = []
+# for sample_seed in range(5):
+#     subprocess.run([
+#         python_exec, f'scripts/{pipeline}',
+#         '--config', f'{best_config_path}',
+#         '--sample', 
+#         '--eval',
+#         '--sample_seed', f'{sample_seed}'
+#     ], check=True)
 
-    report_path = str(Path(best_config['exp_path']) / f'results_{eval_model}.json')
-    report = load_json(report_path)
+#     report_path = str(Path(best_config['exp_path']) / f'results_{eval_model}.json')
+#     report = load_json(report_path)
 
-    all_report.append(report)
+#     all_report.append(report)
 
-avg_results = {
-        split: {
-            metric: round(sum(res[split][metric] for res in all_report) / 5, 4)
-            for metric in ['f1', 'accuracy', 'roc_auc']
-        }
-        for split in ['val', 'test']
-    }
+# avg_results = {
+#         split: {
+#             metric: round(sum(res[split][metric] for res in all_report) / 5, 4)
+#             for metric in ['f1', 'accuracy', 'roc_auc']
+#         }
+#         for split in ['val', 'test']
+#     }
 
-print_metrics(avg_results)
+# print_metrics(avg_results)
     
