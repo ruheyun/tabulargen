@@ -48,8 +48,6 @@ def objective(trial):
 
     dump_config(base_config, exps_path / 'config.toml')
     
-    trial.set_user_attr("config", base_config)
-
     subprocess.run([
         python_exec, f'scripts/{pipeline}',
         '--config', f'{exps_path / "config.toml"}',
@@ -72,6 +70,8 @@ def objective(trial):
         report = load_json(report_path)
 
         score += report['val']['roc_auc']
+    
+    trial.set_user_attr("config", base_config)
 
     shutil.rmtree(exp_dir, ignore_errors=True)
 
