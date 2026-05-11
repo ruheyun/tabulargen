@@ -10,7 +10,7 @@ from inspect import isfunction
 from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, balanced_accuracy_score
 from sklearn.metrics import precision_recall_curve
 
 RawConfig = Dict[str, Any]
@@ -177,6 +177,8 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         f1 = f1_score(y_true, y_label, average='weighted')
         acc = accuracy_score(y_true, y_label)
         auc = roc_auc_score(y_true, y_prob)
+
+        # balanced_acc = balanced_accuracy_score(y_true, y_label)
 
     elif task_type == 'multiclass':
         y_prob = y_pred                      

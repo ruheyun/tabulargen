@@ -13,3 +13,4 @@ opacus==1.5.4
 tqdm==4.67.1
 rdt==1.18.2
 pytest==9.0.2
+sdmetrics==0.28.0
