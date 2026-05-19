@@ -11,7 +11,9 @@ def dcr_base(real_data, synthetic_data, metadata):
     score = DCRBaselineProtection.compute_breakdown(
         real_data=real_data,          
         synthetic_data=synthetic_data,  
-        metadata=metadata               
+        metadata=metadata,
+        num_rows_subsample=1000,
+        num_iterations=5               
     )
 
     print(f'dcr_baseline score: {score}')
@@ -24,7 +26,9 @@ def dcr_over(real_train_data, real_val_data, synthetic_data, metadata):
         real_training_data=real_train_data,    
         synthetic_data=synthetic_data,        
         real_validation_data=real_val_data,    
-        metadata=metadata
+        metadata=metadata,
+        num_rows_subsample=1000,
+        num_iterations=5
     )
 
     print(f'dcr_overfit score: {score}')
