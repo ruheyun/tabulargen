@@ -1,0 +1,40 @@
+{
+    "columns": {
+        "customer_id": {
+            "sdtype": "numerical"
+        },
+        "credit_score": {
+            "sdtype": "numerical"
+        },
+        "age": {
+            "sdtype": "numerical"
+        },
+        "balance": {
+            "sdtype": "numerical"
+        },
+        "estimated_salary": {
+            "sdtype": "numerical"
+        },
+        "country": {
+            "sdtype": "categorical"
+        },
+        "gender": {
+            "sdtype": "categorical"
+        },
+        "tenure": {
+            "sdtype": "categorical"
+        },
+        "products_number": {
+            "sdtype": "categorical"
+        },
+        "credit_card": {
+            "sdtype": "categorical"
+        },
+        "active_member": {
+            "sdtype": "categorical"
+        },
+        "churn": {
+            "sdtype": "categorical"
+        }
+    }
+}

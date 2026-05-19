@@ -1,0 +1,67 @@
+{
+    "columns": {
+        "laufzeit": {
+            "sdtype": "numerical"
+        },
+        "hoehe": {
+            "sdtype": "numerical"
+        },
+        "alter": {
+            "sdtype": "numerical"
+        },
+        "laufkont": {
+            "sdtype": "categorical"
+        },
+        "moral": {
+            "sdtype": "categorical"
+        },
+        "verw": {
+            "sdtype": "categorical"
+        },
+        "sparkont": {
+            "sdtype": "categorical"
+        },
+        "beszeit": {
+            "sdtype": "categorical"
+        },
+        "rate": {
+            "sdtype": "categorical"
+        },
+        "famges": {
+            "sdtype": "categorical"
+        },
+        "buerge": {
+            "sdtype": "categorical"
+        },
+        "wohnzeit": {
+            "sdtype": "categorical"
+        },
+        "verm": {
+            "sdtype": "categorical"
+        },
+        "weitkred": {
+            "sdtype": "categorical"
+        },
+        "wohn": {
+            "sdtype": "categorical"
+        },
+        "bishkred": {
+            "sdtype": "categorical"
+        },
+        "beruf": {
+            "sdtype": "categorical"
+        },
+        "pers": {
+            "sdtype": "categorical"
+        },
+        "telef": {
+            "sdtype": "categorical"
+        },
+        "gastarb": {
+            "sdtype": "categorical"
+        },
+        "kredit": {
+            "sdtype": "categorical"
+        }
+    }
+}

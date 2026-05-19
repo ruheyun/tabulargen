@@ -1,0 +1,76 @@
+{
+    "columns": {
+        "col0": {
+            "sdtype": "numerical"
+        },
+        "col4": {
+            "sdtype": "numerical"
+        },
+        "col11": {
+            "sdtype": "numerical"
+        },
+        "col12": {
+            "sdtype": "numerical"
+        },
+        "col13": {
+            "sdtype": "numerical"
+        },
+        "col14": {
+            "sdtype": "numerical"
+        },
+        "col15": {
+            "sdtype": "numerical"
+        },
+        "col16": {
+            "sdtype": "numerical"
+        },
+        "col17": {
+            "sdtype": "numerical"
+        },
+        "col18": {
+            "sdtype": "numerical"
+        },
+        "col19": {
+            "sdtype": "numerical"
+        },
+        "col20": {
+            "sdtype": "numerical"
+        },
+        "col21": {
+            "sdtype": "numerical"
+        },
+        "col22": {
+            "sdtype": "numerical"
+        },
+        "col1": {
+            "sdtype": "categorical"
+        },
+        "col2": {
+            "sdtype": "categorical"
+        },
+        "col3": {
+            "sdtype": "categorical"
+        },
+        "col5": {
+            "sdtype": "categorical"
+        },
+        "col6": {
+            "sdtype": "categorical"
+        },
+        "col7": {
+            "sdtype": "categorical"
+        },
+        "col8": {
+            "sdtype": "categorical"
+        },
+        "col9": {
+            "sdtype": "categorical"
+        },
+        "col10": {
+            "sdtype": "categorical"
+        },
+        "label": {
+            "sdtype": "categorical"
+        }
+    }
+}

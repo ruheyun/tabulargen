@@ -1,0 +1,55 @@
+{
+    "columns": {
+        "age": {
+            "sdtype": "numerical"
+        },
+        "balance": {
+            "sdtype": "numerical"
+        },
+        "day": {
+            "sdtype": "numerical"
+        },
+        "duration": {
+            "sdtype": "numerical"
+        },
+        "campaign": {
+            "sdtype": "numerical"
+        },
+        "pdays": {
+            "sdtype": "numerical"
+        },
+        "previous": {
+            "sdtype": "numerical"
+        },
+        "job": {
+            "sdtype": "categorical"
+        },
+        "marital": {
+            "sdtype": "categorical"
+        },
+        "education": {
+            "sdtype": "categorical"
+        },
+        "default": {
+            "sdtype": "categorical"
+        },
+        "housing": {
+            "sdtype": "categorical"
+        },
+        "loan": {
+            "sdtype": "categorical"
+        },
+        "contact": {
+            "sdtype": "categorical"
+        },
+        "month": {
+            "sdtype": "categorical"
+        },
+        "poutcome": {
+            "sdtype": "categorical"
+        },
+        "y": {
+            "sdtype": "categorical"
+        }
+    }
+}

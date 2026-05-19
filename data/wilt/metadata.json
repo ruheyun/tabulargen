@@ -1,0 +1,22 @@
+{
+    "columns": {
+        "GLCM_pan": {
+            "sdtype": "numerical"
+        },
+        "Mean_Green": {
+            "sdtype": "numerical"
+        },
+        "Mean_Red": {
+            "sdtype": "numerical"
+        },
+        "Mean_NIR": {
+            "sdtype": "numerical"
+        },
+        "SD_pan": {
+            "sdtype": "numerical"
+        },
+        "class": {
+            "sdtype": "categorical"
+        }
+    }
+}
