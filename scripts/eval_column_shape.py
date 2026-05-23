@@ -42,12 +42,14 @@ def metrics(real_data, synthetic_data, metadata):
 
 if __name__ == '__main__':
 
-    data_name = 'wilt'
+    data_name = 'adult'
 
     real_data = pd.read_csv(f'data/{data_name}/{data_name}_train.csv')
 
-    get_metadata(real_data, data_name)
-    # synthetic_data = pd.read_csv(f'exp/{data_name}/reverse.csv')
-    # metadata = load_json(f'data/{data_name}/metadata.json')
+    # get_metadata(real_data, data_name)
+    synthetic_data = pd.read_csv(f'exp/{data_name}/ctgan/reverse.csv')
 
-    # metrics(real_data, synthetic_data, metadata)
+    synthetic_data.columns = real_data.columns
+    metadata = load_json(f'data/{data_name}/metadata.json')
+
+    metrics(real_data, synthetic_data, metadata)
