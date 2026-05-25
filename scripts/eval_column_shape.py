@@ -47,7 +47,7 @@ if __name__ == '__main__':
     real_data = pd.read_csv(f'data/{data_name}/{data_name}_train.csv')
 
     # get_metadata(real_data, data_name)
-    synthetic_data = pd.read_csv(f'exp/{data_name}/ctgan/reverse-10.csv')
+    synthetic_data = pd.read_csv(f'exp/{data_name}/ctgan/reverse-1.csv')
 
     synthetic_data.columns = real_data.columns
     metadata = load_json(f'data/{data_name}/metadata.json')
