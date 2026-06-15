@@ -23,7 +23,7 @@ gaussian_loss_type = "mse"
 scheduler = "cosine"
 
 [train.main]
-epochs = 50
+epochs = 100
 lr = 0.00039806870482992913  # 0.00011205837185064171
 weight_decay = 0.0
 batch_size = 128
@@ -39,7 +39,7 @@ eval_type = "synthetic"
 
 [dp]
 is_dp = true
-epsilon = 1
+epsilon = 1.0
 sigma = 1.9140625
 max_grad_norm = 1.0
 delta = 1e-05

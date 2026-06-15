@@ -120,7 +120,7 @@ class Trainer:
                     curr_count += len(x)
                     curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                    self._anneal_lr(step)
+                    # self._anneal_lr(step)
                     step += 1
                     # self._anneal_C(step)
 
