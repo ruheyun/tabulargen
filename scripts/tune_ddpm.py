@@ -10,41 +10,18 @@ sys.path.append(ROOT)
 from utils import load_config, dump_config, load_json, dump_json, print_metrics
 
 
-def _suggest_mlp_layers(trial):
-
-    def suggest_dim(name):
-        t = trial.suggest_int(name, d_min, d_max)
-        return 2 ** t
-
-    min_n_layers, max_n_layers, d_min, d_max = 1, 2, 6, 10
-    n_layers = 2 * trial.suggest_int('n_layers', min_n_layers, max_n_layers)
-
-    d_first = [suggest_dim('d_first')] if n_layers else []
-    d_middle = (
-        [suggest_dim('d_middle')] * (n_layers - 2)
-        if n_layers > 2 else []
-    )
-    d_last = [suggest_dim('d_last')] if n_layers > 1 else []
-    d_layers = d_first + d_middle + d_last
-
-    return d_layers
-
-
 def objective(trial):
 
     base_config = load_config(base_config_path)
 
     lr = trial.suggest_float('lr', 0.00001, 0.003, log=True)
-    # d_layers = _suggest_mlp_layers(trial)
-    # max_grad_norm = trial.suggest_categorical('max_grad_norm', [1, 3, 5])
-
     base_config['train']['main']['lr'] = lr
-    # base_config['model_params']['rtdl_params']['d_layers'] = d_layers
-    # base_config['dp']['max_grad_norm'] = max_grad_norm
 
     exp_dir = exps_path / f"{trial.number}"
     base_config['exp_path'] = str(exp_dir)
     base_config['eval']['type']['eval_model'] = args.eval_model
+
+    trial.set_user_attr("config", base_config)
 
     dump_config(base_config, exps_path / 'config.toml')
     
@@ -70,8 +47,6 @@ def objective(trial):
         report = load_json(report_path)
 
         score += report['val']['roc_auc']
-    
-    trial.set_user_attr("config", base_config)
 
     shutil.rmtree(exp_dir, ignore_errors=True)
 
@@ -118,6 +93,7 @@ best_config["exp_path"] = str(parent_path / f'{prefix}_best/')
 
 os.makedirs(parent_path / f'{prefix}_best', exist_ok=True)
 dump_config(best_config, best_config_path)
+
 # dump_json(optuna.importance.get_param_importances(study), parent_path / f'{prefix}_best/importance.json')
 
 # subprocess.run([
