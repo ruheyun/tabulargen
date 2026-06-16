@@ -43,7 +43,7 @@ if __name__ == '__main__':
     data_name = 'adult'
 
     real_data = pd.read_csv(f'data/{data_name}/{data_name}_train.csv')
-    synthetic_data = pd.read_csv(f'exp/{data_name}/ctgan/reverse-1.csv')
+    synthetic_data = pd.read_csv(f'exp/{data_name}/reverse.csv')
 
     target_column = real_data.columns[-1]
     evaluate_minority_ratio(

@@ -23,10 +23,10 @@ gaussian_loss_type = "mse"
 scheduler = "cosine"
 
 [train.main]
-epochs = 150
+epochs = 300
 lr = 0.0024384255846226824   # No-dp: 0.0024384255846226824    0.00011205837185064171   0.00039806870482992913
 weight_decay = 0.0
-batch_size = 128
+batch_size = 256
 
 [sample]
 num_samples = 29305
