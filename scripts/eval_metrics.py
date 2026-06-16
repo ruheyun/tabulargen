@@ -135,7 +135,7 @@ if __name__ == '__main__':
     real_val_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
     real_test_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
     val_test_data = pd.concat([real_val_data, real_test_data], ignore_index=True)
-    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'reverse.csv'))
+    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'ctgan', 'reverse.csv'))
     synthetic_data.columns = real_train_data.columns
 
     # get_metadata(real_data, data_name)
