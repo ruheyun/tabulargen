@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     real_train_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_train.csv'))
     real_val_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
-    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'ctgan', 'reverse.csv'))
+    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'reverse.csv'))
 
     metadata = load_json(f'data/{data_name}/metadata.json')
 
