@@ -106,3 +106,21 @@ def train_catboost(
             json.dump(results, f)
 
     return results
+
+
+if __name__ == '__main__':
+    data_name = 'adult'
+
+    data_path = os.path.join('data', data_name)
+    exp_path = os.path.join('exp', data_name, 'ctgan')
+
+    sum_f1, sum_acc, sum_roc = 0, 0, 0
+    for i in range(5):
+        res = train_catboost(data_path, exp_path, seed=i, eval_type='synthetic')
+        sum_f1 += res['test']['f1']
+        sum_acc += res['test']['accuracy']
+        sum_roc += res['test']['roc_auc']
+
+    print(
+        f'avg_f1: {sum_f1 / 5: .4f}, avg_acc: {sum_acc / 5: .4f}, avg_roc: {sum_roc / 5: .4f}'
+    )

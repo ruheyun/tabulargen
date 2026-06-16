@@ -9,6 +9,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import sys
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT)
 from utils import evaluate, print_metrics
 
 
@@ -50,8 +53,6 @@ def train_simple(
     val_data = pd.read_csv(os.path.join(exp_path, 'val.csv'))
     test_data = pd.read_csv(os.path.join(exp_path, 'test.csv'))
 
-    
-
     X = {
         'train': train_data.values,
         'val': val_data.values[:, :-1],
@@ -73,7 +74,7 @@ def train_simple(
             "rf": RandomForestClassifier(max_depth=15, min_samples_leaf=5, random_state=seed, n_jobs=-1),
             "lr": LogisticRegression(max_iter=1000, n_jobs=-1, random_state=seed),
             "mlp": MLPClassifier(max_iter=1000, random_state=seed, early_stopping=True, validation_fraction=0.1, n_iter_no_change=16),
-            "knn": KNeighborsClassifier(n_neighbors=5, weights='distance')
+            # "knn": KNeighborsClassifier(n_neighbors=5, weights='distance')
         }
     
     all_results = []
@@ -103,17 +104,37 @@ def train_simple(
         print_metrics(results)
         print()
 
-        if exp_path is not None:
-            os.makedirs(exp_path, exist_ok=True)
-            with open(os.path.join(exp_path, f'results_{model_name}.json'), 'w') as f:
-                json.dump(results, f)
+        # if exp_path is not None:
+        #     os.makedirs(exp_path, exist_ok=True)
+        #     with open(os.path.join(exp_path, f'results_{model_name}.json'), 'w') as f:
+        #         json.dump(results, f)
     
     avg_results = {
         split: {
-            metric: round(sum(res[split][metric] for res in all_results) / 5, 4)
+            metric: round(sum(res[split][metric] for res in all_results) / 4, 4)
             for metric in ['f1', 'accuracy', 'roc_auc']
         }
         for split in ['val', 'test']
     }
     print('Average results')
     print_metrics(avg_results)
+
+    return avg_results
+
+
+if __name__ == '__main__':
+    data_name = 'adult'
+
+    data_path = os.path.join('data', data_name)
+    exp_path = os.path.join('exp', data_name, 'ctgan')
+
+    sum_f1, sum_acc, sum_roc = 0, 0, 0
+    for i in range(5):
+        res = train_simple(data_path, exp_path, seed=i, eval_type='synthetic')
+        sum_f1 += res['test']['f1']
+        sum_acc += res['test']['accuracy']
+        sum_roc += res['test']['roc_auc']
+
+    print(
+        f'avg_f1: {sum_f1 / 5: .4f}, avg_acc: {sum_acc / 5: .4f}, avg_roc: {sum_roc / 5: .4f}'
+    )

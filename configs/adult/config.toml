@@ -18,7 +18,7 @@ d_layers = [
 dropout = 0.0
 
 [diffusion_params]
-num_timesteps = 500
+num_timesteps = 1000
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
@@ -38,7 +38,7 @@ eval_model = "catboost"
 eval_type = "synthetic"
 
 [dp]
-is_dp = true
+is_dp = false
 epsilon = 1.0
 sigma = 1.9140625
 max_grad_norm = 1.0
