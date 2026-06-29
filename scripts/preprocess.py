@@ -76,6 +76,6 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
 
 
 if __name__ == '__main__':
-    data_path = 'data/cardio'
-    exp_path = 'exp/cardio'
+    data_path = 'data/credit'
+    exp_path = 'exp/credit'
     data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb')
