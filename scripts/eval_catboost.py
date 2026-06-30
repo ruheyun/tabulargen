@@ -109,7 +109,7 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'credit'
+    data_name = 'default'
 
     data_path = os.path.join('data', data_name)
     exp_path = os.path.join('exp', data_name, 'ctgan')
