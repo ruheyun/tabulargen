@@ -41,7 +41,7 @@ def objective(trial):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ds_name', type=str, default='credit')
+parser.add_argument('--ds_name', type=str, default='market')
 parser.add_argument('--n_trials', type=int, default=100)
 
 args = parser.parse_args()
@@ -49,6 +49,7 @@ data_name = args.ds_name
 n_trials = args.n_trials
 data_path = os.path.join('data', data_name)
 exp_path = os.path.join('exp', data_name)
+os.makedirs(exp_path, exist_ok=True)
 
 study = optuna.create_study(
     sampler=optuna.samplers.TPESampler(seed=0),
