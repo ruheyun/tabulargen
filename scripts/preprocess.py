@@ -76,6 +76,6 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
 
 
 if __name__ == '__main__':
-    data_path = 'data/market'
-    exp_path = 'exp/market'
+    data_path = 'data/wilt'
+    exp_path = 'exp/wilt'
     data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb')
