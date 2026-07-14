@@ -109,10 +109,10 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'wilt'
+    data_name = 'adult'
 
     data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'ctgan')
+    exp_path = os.path.join('exp', data_name, 'tvae')
 
     sum_f1, sum_acc, sum_roc = 0, 0, 0
     for i in range(5):
