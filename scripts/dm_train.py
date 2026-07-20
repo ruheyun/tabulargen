@@ -15,7 +15,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
-from analyze_grad import GradNormAnalyzer
+# from analyze_grad import GradNormAnalyzer
 
 
 class Trainer:
@@ -59,10 +59,10 @@ class Trainer:
                 noise_multiplier=noise_multiplier
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
-        elif self.is_print_grad:
-            self.analyzer = GradNormAnalyzer(self.diffusion)
-            self.diffusion = self.analyzer.model
-            self.diffusion.compute_loss = self.diffusion._module.compute_loss
+        # elif self.is_print_grad:
+            # self.analyzer = GradNormAnalyzer(self.diffusion)
+            # self.diffusion = self.analyzer.model
+            # self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
