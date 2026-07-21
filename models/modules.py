@@ -1,11 +1,9 @@
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim
 from torch import Tensor
+from typing import Callable, List, Type, Union
 
 ModuleType = Union[str, Callable[..., nn.Module]]
 
@@ -120,6 +118,7 @@ class MLP(nn.Module):
             d_in: int,
             d_layers: List[int],
             dropout: float,
+            activation: str,
             d_out: int,
     ) -> 'MLP':
         
@@ -129,11 +128,11 @@ class MLP(nn.Module):
                 'if d_layers contains more than two elements, then'
                 ' all elements except for the first and the last ones must be equal.'
             )
-        return MLP(
+        return cls(
             d_in=d_in,
             d_layers=d_layers,  # type: ignore
             dropouts=dropout,
-            activation='ReLU',
+            activation=activation,  # 'ReLU'
             d_out=d_out,
         )
 
