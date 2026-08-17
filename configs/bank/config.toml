@@ -24,7 +24,7 @@ scheduler = "cosine"
 
 [train.main]
 epochs = 300
-lr = 0.0006982179585993695
+lr = 0.0005910317077425306
 weight_decay = 0.0
 batch_size = 256
 
