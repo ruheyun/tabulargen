@@ -7,7 +7,7 @@ import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
-from utils import load_config, dump_config, load_json, dump_json, print_metrics
+from utils import load_config, dump_config, load_json, dump_json, print_metrics, TabularDataset
 
 
 def objective(trial):
@@ -20,6 +20,7 @@ def objective(trial):
     exp_dir = exps_path / f"{trial.number}"
     base_config['exp_path'] = str(exp_dir)
     base_config['eval']['type']['eval_model'] = args.eval_model
+    base_config['model_params']['d_in'] = num_features
 
     trial.set_user_attr("config", base_config)
 
@@ -75,6 +76,9 @@ pipeline = f'pipeline.py'
 base_config_path = f'configs/{ds_name}/{config_name}.toml'
 parent_path = Path(f'exp/{ds_name}/')
 exps_path = parent_path / 'many-exps'
+
+dataset = TabularDataset(parent_path)
+num_features = dataset.X_dim
 
 os.makedirs(exps_path, exist_ok=True)
 
