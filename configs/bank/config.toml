@@ -16,6 +16,7 @@ d_layers = [
     512,
 ]
 dropout = 0.0
+activation = 'SiLU'
 
 [diffusion_params]
 num_timesteps = 1000
