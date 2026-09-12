@@ -14,6 +14,7 @@ from pathlib import Path
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, balanced_accuracy_score
 from sklearn.metrics import precision_recall_curve
 from opacus.grad_sample import GradSampleModule
+from dataclasses import dataclass
 
 RawConfig = Dict[str, Any]
 _CONFIG_NONE = '__none__'
@@ -139,6 +140,30 @@ def update_ema(target_params, source_params, rate=0.999):
     with torch.no_grad():
         for targ, src in zip(target_params, source_params):
             targ.mul_(rate).add_(src.detach(), alpha=1 - rate)
+
+
+@dataclass(frozen=True)
+class RunPaths:
+    root: Path
+
+    @property
+    def encoded(self):
+        return self.root / 'encoded'
+
+    @property
+    def checkpoints(self):
+        return self.root / 'checkpoints'
+
+    @property
+    def logs(self):
+        return self.root / 'logs'
+
+    def samples(self, seed):
+        return self.root / 'samples' / f'seed_{seed}'
+
+    def evaluation(self, mode, sample_seed, model, seed):
+        source = f'seed_{sample_seed}' if mode == 'synthetic' else 'real'
+        return self.root / 'evaluation' / source / model / f'seed_{seed}'
 
 
 class TabularDataset(Dataset):

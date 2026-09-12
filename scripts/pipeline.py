@@ -1,14 +1,18 @@
 import json
-import os
 import argparse
-import torch
-from preprocess import data_process
-from dm_train import train
-from dm_sample import sample
-from eval_catboost import train_catboost
-from eval_simple import train_simple
-from utils import load_config
+import os
+import sys
 import warnings
+from pathlib import Path
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT)
+from scripts.data.preprocess import data_process
+from scripts.training.dm_train import train
+from scripts.sampling.dm_sample import sample
+from scripts.evaluation.eval_catboost import train_catboost
+from scripts.evaluation.eval_simple import train_simple
+from utils import load_config, dump_json, RunPaths
+
 warnings.filterwarnings('ignore')
 
 
@@ -21,55 +25,56 @@ def save_config(exp_dir, config):
 
 def main():
     parser = argparse.ArgumentParser()
-    # 启用训练、采样、测试
+    # 启用编码、训练、采样、测试
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
-    parser.add_argument('--train', action='store_true', default=False)
+    parser.add_argument('--encode', action='store_true', default=True)
+    parser.add_argument('--train', action='store_true', default=True)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
-    parser.add_argument('--sample_seed', type=int, default=-1)
-    # 评估模型设置
-    parser.add_argument('--eval_model', type=str, choices=['catboost', 'simple'], default='catboost')
+    parser.add_argument('--sample_seed', type=int)
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
 
-    if args.sample_seed != -1:
+    if args.sample_seed is not None and args.sample_seed >= 0:
         raw_config['sample']['seed'] = args.sample_seed
 
-    if args.eval_model != 'catboost':
-        raw_config['eval']['type']['eval_model'] = args.eval_model
+    paths = RunPaths(Path(raw_config['experiment']['path']))
+    data_path = raw_config['data']['path']
+    checkpoint_path = Path(paths.checkpoints / 'checkpoint.pt').resolve()
+    sample_dir = paths.samples(raw_config['sample']['seed'])
 
-    if 'device' in raw_config:
-        device = torch.device(raw_config['device'])
-    else:
-        device = torch.device('cpu')
 
-    save_config(raw_config['exp_path'], raw_config)
-
-    data_process(raw_config['data_path'], raw_config['exp_path'], num_encoder='minmax', cat_encoder='alb')
+    if args.encode:
+        data_process(data_path, str(paths.encoded), **raw_config['encoding'])
 
 
     if args.train:
         train(
-            **raw_config['train']['main'],
-            **raw_config['diffusion_params'],
-            exp_path=raw_config['exp_path'],
-            model_params=raw_config['model_params'],
-            dp_params=raw_config['dp'],
-            device=device,
+            **raw_config['train'],
+            **raw_config['diffusion'],
+            exp_path=str(paths.encoded),
+            checkpoint_path=str(paths.checkpoints),
+            log_path=str(paths.logs),
+            model_params=raw_config['model'],
+            dp_params=raw_config['privacy'],
+            device=raw_config['device'],
         )
+
 
     if args.sample:
         sample(
-            **raw_config['diffusion_params'],
-            exp_path=raw_config['exp_path'],
+            **raw_config['diffusion'],
+            exp_path=str(sample_dir),
             batch_size=raw_config['sample']['batch_size'],
             num_samples=raw_config['sample']['num_samples'],
-            model_path=os.path.join(raw_config['exp_path'], 'model_ema.pt'),
-            model_params=raw_config['model_params'],
-            device=device,
+            model_path=checkpoint_path,
+            model_params=raw_config['model'],
+            device=raw_config['device'],
+            disbalance='uniform' if raw_config['sample']['class_distribution'] == 'uniform' else None,
             seed=raw_config['sample'].get('seed', 0)
         )
+
 
     if args.eval:
         if raw_config['eval']['type']['eval_model'] == 'catboost':
@@ -90,6 +95,8 @@ def main():
 
         else:
             print('No eval model!')
+
+    # dump_json(raw_config['experiment']['path'], raw_config)
 
 
 if __name__ == '__main__':

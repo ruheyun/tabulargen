@@ -9,6 +9,7 @@ import pandas as pd
 from opacus import PrivacyEngine
 from opacus.accountants.utils import get_noise_multiplier
 from torch.utils.data import DataLoader
+from pathlib import Path
 import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,7 +39,7 @@ class Trainer:
         self.delta = dp_params['delta']
         self.max_grad_norm = dp_params['max_grad_norm']
         # self.sigma = dp_params['sigma']
-        self.is_print_grad = False
+        # self.is_print_grad = False
 
         if self.is_dp:
 
@@ -71,25 +72,8 @@ class Trainer:
     def _anneal_lr(self, step):
         frac_done = step / self.steps
         lr = self.init_lr * (1 - frac_done)
-        # if lr < self.init_lr * 0.3:
-        #     return
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
-
-    def _gradient_rescaling(self, y, alpha=-0.5, tau=0.01, w_min=0.5, w_max=5):
-        p_y = self.info['dp_p_y']
-        p_y = torch.tensor(p_y, dtype=torch.float32, device=self.device)
-        p_y_smooth = (p_y + tau) / (1 + tau * len(p_y))
-        w_y = p_y_smooth ** alpha
-        w_y = w_y / w_y.mean()
-        w_y = torch.clamp(w_y, min=w_min, max=w_max)
-
-        for param in self.diffusion._denoise_fn.parameters():
-            if hasattr(param, 'grad_sample') and param.grad_sample is not None:
-                w_expanded = w_y[y]
-                while w_expanded.dim() < param.grad_sample.dim():
-                    w_expanded = w_expanded.unsqueeze(-1)
-                param.grad_sample *= w_expanded
 
     def _run_step(self, x, out_dict):
         x = x.to(self.device)
@@ -145,7 +129,7 @@ class Trainer:
 
 
 def train(
-        exp_path='exp/adult',
+        exp_path='exp/adult/run_00/encoded',
         epochs=50,
         lr=3e-4,
         weight_decay=0.0,
@@ -157,8 +141,13 @@ def train(
         dp_params=None,
         device=torch.device('cuda:0'),
         seed=0,
+        checkpoint_path=None,
+        log_path=None,
+        num_workers=2,
 ):
     delu.random.seed(seed)
+
+    device = torch.device(device)
 
     with open(os.path.join(exp_path, 'info.json'), 'r') as f:
         info = json.load(f)
@@ -166,6 +155,7 @@ def train(
     dataset = TabularDataset(exp_path)
 
     num_features = dataset.X_dim
+    model_params = deepcopy(model_params)
     model_params['d_in'] = num_features
 
     print(f'model params: {model_params}')
@@ -191,7 +181,7 @@ def train(
     for param in ema_model.parameters():
         param.detach_()
 
-    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
+    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=num_workers, pin_memory=device.type == 'cuda')
 
     optimizer = torch.optim.AdamW(diffusion.parameters(), lr=lr, weight_decay=weight_decay)
     trainer = Trainer(
@@ -208,7 +198,10 @@ def train(
     )
     trainer.run_loop()
 
-    torch.save(diffusion._denoise_fn.state_dict(), os.path.join(exp_path, 'model.pt'))
-    torch.save(ema_model.state_dict(), os.path.join(exp_path, 'model_ema.pt'))
+    os.makedirs(checkpoint_path, exist_ok=True)
+    os.makedirs(log_path, exist_ok=True)
+    
+    torch.save(diffusion._denoise_fn.state_dict(), os.path.join(checkpoint_path, 'model.pt'))
+    torch.save(ema_model.state_dict(), os.path.join(checkpoint_path, 'model_ema.pt'))
 
-    loss_history.to_csv(os.path.join(exp_path, 'loss.csv'), index=False)    
+    loss_history.to_csv(os.path.join(log_path, 'loss.csv'), index=False)    

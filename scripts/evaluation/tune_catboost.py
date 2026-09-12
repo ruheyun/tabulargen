@@ -2,7 +2,7 @@ import os
 import optuna
 import argparse
 import json
-from eval_catboost import train_catboost
+from scripts.evaluation.eval_catboost import train_catboost
 
 
 def suggest_catboost_params(trial):
