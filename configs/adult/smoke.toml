@@ -1,12 +1,12 @@
 schema_version = 2
 seed = 0
-device = "cuda:0"
+device = "cpu"
 
 [data]
-path = "../../data/cardio"
+path = "../../data/adult"
 
 [experiment]
-path = "../../exp/cardio/run_001"
+path = "../../exp/adult_smoke/run_001"
 
 [encoding]
 num_encoder = "minmax"
@@ -21,23 +21,21 @@ num_classes = 2
 
 [model.rtdl_params]
 d_layers = [
-    512,
-    1024,
-    1024,
-    512,
+    32,
+    32,
 ]
 dropout = 0.0
 activation = "SiLU"
 
 [diffusion]
-num_timesteps = 1000
+num_timesteps = 20
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
 [train]
 seed = 0
 num_workers = 2
-epochs = 300
+epochs = 1
 lr = 0.0024384255846226824
 weight_decay = 0.0
 batch_size = 256
@@ -45,7 +43,7 @@ batch_size = 256
 [sample]
 seed = 4
 class_distribution = "empirical"
-num_samples = 42000
+num_samples = 512
 batch_size = 256
 
 [evaluation]

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tabulargen"
+version = "0.1.0"
+description = "Modular tabular conditional diffusion experiments"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.7,<3", "numpy>=2,<3", "pandas>=2.2,<3",
+    "scikit-learn>=1.6,<2", "scipy>=1.16,<2", "delu>=0.0.26",
+    "opacus>=1.5.4,<2", "tqdm>=4.67", "tomli-w>=1.2",
+    "catboost>=1.2.8,<2",
+]
+
+[project.optional-dependencies]
+tuning = ["optuna>=4.5,<5"]
+quality = ["sdmetrics>=0.28,<1"]
+dev = ["pytest>=9,<10"]
+
+[project.scripts]
+tabulargen = "tabulargen.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

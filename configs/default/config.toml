@@ -1,44 +1,58 @@
-data_path = "data/default"
-exp_path = "exp/default"
-device = "cuda:0"
+schema_version = 2
 seed = 0
+device = "cuda:0"
 
-[model_params]
-d_in = 44
+[data]
+path = "../../data/default"
+
+[experiment]
+path = "../../exp/default/run_001"
+
+[encoding]
+num_encoder = "minmax"
+cat_encoder = "alb"
+seed = 0
+histogram_epsilon = 0.1
+histogram_delta = 1e-05
+
+[model]
 num_classes = 2
 is_y_cond = true
 
-[model_params.rtdl_params]
+[model.rtdl_params]
 d_layers = [
     1024,
     1024,
 ]
 dropout = 0.0
 
-[diffusion_params]
+[diffusion]
 num_timesteps = 500
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
-[train.main]
+[train]
+seed = 0
+num_workers = 2
 epochs = 25
 lr = 0.0007286257561853825
 weight_decay = 0.0
 batch_size = 128
 
 [sample]
+seed = 4
+class_distribution = "empirical"
 num_samples = 18000
 batch_size = 256
-seed = 4
 
-[eval.type]
-eval_model = "catboost"
-eval_type = "synthetic"
+[evaluation]
+model = "all"
+mode = "synthetic"
+seed = 0
+catboost_params_path = "catboost.json"
 
-[dp]
+[privacy]
 is_dp = true
 epsilon = 1
-sigma = 1.7578125
 max_grad_norm = 1.0
 delta = 1e-05
-noise_multiplicity_K = 3
