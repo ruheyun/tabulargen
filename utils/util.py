@@ -6,6 +6,7 @@ import tomli_w
 import numpy as np
 import pandas as pd
 import csv
+import pickle
 import torch.nn.functional as F
 from inspect import isfunction
 from torch.utils.data import Dataset
@@ -142,6 +143,18 @@ def update_ema(target_params, source_params, rate=0.999):
             targ.mul_(rate).add_(src.detach(), alpha=1 - rate)
 
 
+def load_checkpoint(path):
+    path = Path(path).resolve()
+    checkpoint = torch.load(path, map_location='cpu', weights_only=True)
+    encoded = (path.parent / checkpoint['encoding']['path']).resolve()
+    return checkpoint, encoded
+
+
+def load_wrapper(path):
+    with open(path, "rb") as stream:
+        return pickle.load(stream)
+    
+
 @dataclass(frozen=True)
 class RunPaths:
     root: Path
@@ -161,9 +174,8 @@ class RunPaths:
     def samples(self, seed):
         return self.root / 'samples' / f'seed_{seed}'
 
-    def evaluation(self, mode, sample_seed, model, seed):
-        source = f'seed_{sample_seed}' if mode == 'synthetic' else 'real'
-        return self.root / 'evaluation' / source / model / f'seed_{seed}'
+    def evaluation(self, seed):
+        return self.root / 'evaluation' / f'seed_{seed}'
 
 
 class TabularDataset(Dataset):
@@ -244,6 +256,19 @@ def print_metrics(results):
     print(res["test"])
 
     return res
+
+
+def average_metrics(per_model):
+    """Give each fitted model one equal vote, separately for every split/metric."""
+    if not per_model:
+        raise ValueError('At least one model is required for averaging')
+    return {
+        split: {
+            metric: sum(result[split][metric] for result in per_model.values()) / len(per_model)
+            for metric in ['f1', 'accuracy', 'roc_auc']
+        }
+        for split in ['train', 'val', 'test']
+    }
 
 
 class GradNormAnalyzer:

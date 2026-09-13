@@ -48,8 +48,9 @@ batch_size = 256
 
 [evaluation]
 seed = 0
+models = ['catboost', 'tree', 'rf', 'lr', 'mlp']
 mode = "synthetic"
-catboost_params_path = "catboost.json"
+catboost_params_path = "configs/adult/catboost.json"
 
 [privacy]
 is_dp = false

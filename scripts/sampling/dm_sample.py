@@ -4,46 +4,49 @@ import pandas as pd
 import torch
 import numpy as np
 import delu
+from copy import deepcopy
 import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
+from utils import load_checkpoint, load_wrapper
 
 
 def sample(
-    exp_path='exp/adult',
+    exp_path,
+    model_path=None,
     batch_size=256,
     num_samples=0,
-    model_params=None,
-    model_path=None,
-    num_timesteps=500,
-    gaussian_loss_type='mse',
-    scheduler='cosine',
     device=torch.device('cuda:0'),
     seed=0,
     disbalance=None
 ):
     delu.random.seed(seed)
+    device = torch.device(device)
 
-    with open(os.path.join(exp_path, 'info.json'), 'r') as f:
+    checkpoint, encoding_path = load_checkpoint(model_path)
+    model_params = deepcopy(checkpoint['model_params'])
+    diffusion_params = checkpoint['diffusion_params']
+    state_dict = checkpoint['ema_state_dict']
+
+    with open(os.path.join(encoding_path, 'info.json'), 'r') as f:
         info = json.load(f)  
+
+    assert model_params['d_in'] == info['n_features'], 'model input dimension does not match encoded data'
+
 
     model = MLPDiffusion(**model_params)
 
-    model.load_state_dict(
-        torch.load(model_path, map_location="cpu")
-    )
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
 
     diffusion = GaussianDiffusion(
         input_dim=info['n_features'],
         denoise_fn=model,
-        gaussian_loss_type=gaussian_loss_type,
-        num_timesteps=num_timesteps,
-        scheduler=scheduler,
-        device=device
+        device=device,
+        **diffusion_params
     )
 
     diffusion.to(device)
@@ -51,7 +54,7 @@ def sample(
 
     print('Starting sampling...')
     if disbalance == 'uniform':
-        empirical_class_dist = torch.tensor([0.5, 0.5], dtype=torch.float32)
+        empirical_class_dist = torch.ones(info['n_classes'], dtype=torch.float32) / info['n_classes']
     else:
         empirical_class_dist = torch.tensor(info['origin_p_y'], dtype=torch.float32)
     
@@ -59,11 +62,9 @@ def sample(
 
     X_gen, y_gen = x_gen.cpu().numpy(), y_gen.cpu().numpy()
 
-    with open(f"{exp_path}/data_wrapper.pkl", "rb") as f:
-        data_wrapper = pickle.load(f)
 
-    with open(f"{exp_path}/label_wrapper.pkl", "rb") as f:
-        label_wrapper = pickle.load(f)
+    data_wrapper = load_wrapper(encoding_path / 'data_wrapper.pkl')
+    label_wrapper = load_wrapper(encoding_path / 'label_wrapper.pkl')
 
     X_gen_ = data_wrapper.Reverse(X_gen)
     y_gen_ = label_wrapper.Reverse(y_gen)
@@ -79,6 +80,7 @@ def sample(
 
     unreverse_data = pd.concat([X_gen, y_gen], axis=1)
     unreverse_data.columns = cols
+    os.makedirs(exp_path, exist_ok=True)
     unreverse_data.to_csv(os.path.join(exp_path, 'unreverse.csv'), index=False, header=True)
 
     X_gen_ = pd.DataFrame(X_gen_)
@@ -90,3 +92,4 @@ def sample(
     reverse_data.to_csv(os.path.join(exp_path, 'reverse.csv'), index=False, header=True)
 
     print(f"Raw samples saved to {exp_path}, Sample done!")
+    return encoding_path

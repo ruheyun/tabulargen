@@ -2,6 +2,7 @@ import os
 import delu
 import json
 import pandas as pd
+from copy import deepcopy
 from pprint import pprint
 from catboost import CatBoostClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -58,10 +59,9 @@ def train_catboost(
     print(f'Train size: {X["train"].shape}, Val size: {X["val"].shape}, Test size: {X["test"].shape}')
 
     if params is None:
-        with open(os.path.join('configs', data_name, 'catboost.json'), 'r') as f:
-            catboost_config = json.load(f)
-    else:
-        catboost_config = params
+        raise ValueError('CatBoost parameters must be provided explicitly.')
+    
+    catboost_config = deepcopy(params)
 
     if 'cat_features' not in catboost_config:
         catboost_config['cat_features'] = list(range(info['n_num_features'], info['n_num_features'] + info['n_cat_features']))
@@ -100,12 +100,12 @@ def train_catboost(
 
     print_metrics(results)
 
-    if exp_path is not None:
-        os.makedirs(exp_path, exist_ok=True)
-        with open(os.path.join(exp_path, 'results_catboost.json'), 'w') as f:
-            json.dump(results, f)
+    # if exp_path is not None:
+    #     os.makedirs(exp_path, exist_ok=True)
+    #     with open(os.path.join(exp_path, 'results_catboost.json'), 'w') as f:
+    #         json.dump(results, f)
 
-    return results
+    return {'metrics': results, 'per_model': {'catboost': results}}
 
 
 if __name__ == '__main__':

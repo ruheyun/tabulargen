@@ -1,4 +1,5 @@
 import math
+from tqdm import tqdm
 from utils import *
 
 eps = 1e-8
@@ -324,20 +325,26 @@ class GaussianDiffusion(torch.nn.Module):
         all_y = []
         all_samples = []
         num_generated = 0
-        while num_generated < num_samples:
-            sample, out_dict = sample_fn(b, y_dist)
-            y_batch = out_dict.get('y', None)
-            mask_nan = torch.any(sample.isnan(), dim=1)
-            if mask_nan.any():
-                sample = sample[~mask_nan]
+        num_nan = 0
+        with tqdm(total=num_samples, desc='Sampling', unit='sample') as pbar:
+            while num_generated < num_samples:
+                sample, out_dict = sample_fn(b, y_dist)
+                y_batch = out_dict.get('y', None)
+                mask_nan = torch.any(sample.isnan(), dim=1)
+                if mask_nan.any():
+                    num_nan += mask_nan.sum().item()
+                    sample = sample[~mask_nan]
+                    if exists(y_batch):
+                        y_batch = y_batch[~mask_nan]
+
+                all_samples.append(sample)
+
                 if exists(y_batch):
-                    y_batch = y_batch[~mask_nan]
+                    all_y.append(y_batch.cpu())
+                num_generated += sample.shape[0]
 
-            all_samples.append(sample)
-
-            if exists(y_batch):
-                all_y.append(y_batch.cpu())
-            num_generated += sample.shape[0]
+                pbar.update(min(sample.shape[0], num_samples - pbar.n))
+                pbar.set_postfix(generated=num_generated, nan=num_nan)
 
         x_gen = torch.cat(all_samples, dim=0)[:num_samples]
         y_gen = torch.cat(all_y, dim=0)[:num_samples] if all_y else None

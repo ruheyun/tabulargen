@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
-from utils import evaluate, print_metrics
+from utils import evaluate, print_metrics, load_wrapper, average_metrics
 
 
 def train_simple(
@@ -21,6 +21,7 @@ def train_simple(
     seed=0,
     eval_type='real',
     params=None,
+    encoded_path=None
 ):
     delu.random.seed(seed)
 
@@ -32,26 +33,30 @@ def train_simple(
         print(f'loading synthetic data: {exp_path}')
         train_data = pd.read_csv(os.path.join(exp_path, 'reverse.csv'))
 
-        with open(os.path.join(exp_path, 'data_wrapper.pkl'), 'rb') as f:
-            data_wrapper = pickle.load(f)
+        # with open(os.path.join(exp_path, 'data_wrapper.pkl'), 'rb') as f:
+        #     data_wrapper = pickle.load(f)
 
-        with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
-            label_wrapper = pickle.load(f)
+        # with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
+        #     label_wrapper = pickle.load(f)
+
+        data_wrapper = load_wrapper(encoded_path / 'data_wrapper.pkl')
+
+        label_wrapper = load_wrapper(encoded_path / 'label_wrapper.pkl')
 
         label_data = label_wrapper.transform(train_data.iloc[:, -1].values)
         train_data = data_wrapper.transform(train_data.iloc[:, :-1])
 
     elif eval_type == 'real':
-        print(f'loading real data: {exp_path}')
-        train_data = pd.read_csv(os.path.join(exp_path, 'train.csv'))
+        print(f'loading real data: {encoded_path}')
+        train_data = pd.read_csv(os.path.join(encoded_path, 'train.csv'))
 
         label_data = train_data.iloc[:, -1]
         train_data = train_data.iloc[:, :-1]
     else:
         raise "Choose eval method"
 
-    val_data = pd.read_csv(os.path.join(exp_path, 'val.csv'))
-    test_data = pd.read_csv(os.path.join(exp_path, 'test.csv'))
+    val_data = pd.read_csv(os.path.join(encoded_path, 'val.csv'))
+    test_data = pd.read_csv(os.path.join(encoded_path, 'test.csv'))
 
     X = {
         'train': train_data.values,
@@ -60,7 +65,7 @@ def train_simple(
     }
 
     y = {
-        'train': label_data.values,
+        'train': label_data.values.reshape(-1),
         'val': val_data.values[:, -1],
         'test': test_data.values[:, -1],
     }
@@ -74,10 +79,9 @@ def train_simple(
             "rf": RandomForestClassifier(max_depth=15, min_samples_leaf=5, random_state=seed, n_jobs=-1),
             "lr": LogisticRegression(max_iter=1000, n_jobs=-1, random_state=seed),
             "mlp": MLPClassifier(max_iter=1000, random_state=seed, early_stopping=True, validation_fraction=0.1, n_iter_no_change=16),
-            # "knn": KNeighborsClassifier(n_neighbors=5, weights='distance')
         }
     
-    all_results = []
+    all_results = {}
     for model_name, model in models.items():
         print(model.__class__.__name__)
 
@@ -99,7 +103,9 @@ def train_simple(
             for k in predictions
         }
 
-        all_results.append(results)
+        # all_results.append(results)
+
+        all_results[model_name] = results
 
         print_metrics(results)
         print()
@@ -109,17 +115,19 @@ def train_simple(
         #     with open(os.path.join(exp_path, f'results_{model_name}.json'), 'w') as f:
         #         json.dump(results, f)
     
-    avg_results = {
-        split: {
-            metric: round(sum(res[split][metric] for res in all_results) / 4, 4)
-            for metric in ['f1', 'accuracy', 'roc_auc']
-        }
-        for split in ['val', 'test']
-    }
-    print('Average results')
-    print_metrics(avg_results)
+    # avg_results = {
+    #     split: {
+    #         metric: round(sum(res[split][metric] for res in all_results) / 4, 4)
+    #         for metric in ['f1', 'accuracy', 'roc_auc']
+    #     }
+    #     for split in ['val', 'test']
+    # }
 
-    return avg_results
+    # avg_results = average_metrics(all_results)
+    # print('Average results')
+    # print_metrics(avg_results)
+
+    return {'metrics': 'avg_results', 'per_model': all_results}
 
 
 if __name__ == '__main__':

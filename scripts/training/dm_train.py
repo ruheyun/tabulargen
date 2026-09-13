@@ -158,7 +158,7 @@ def train(
     model_params = deepcopy(model_params)
     model_params['d_in'] = num_features
 
-    print(f'model params: {model_params}')
+    print(f'model params: {model_params} \n device: {device}')
 
     loss_history = pd.DataFrame(columns=['step', 'loss'])
 
@@ -201,7 +201,33 @@ def train(
     os.makedirs(checkpoint_path, exist_ok=True)
     os.makedirs(log_path, exist_ok=True)
     
-    torch.save(diffusion._denoise_fn.state_dict(), os.path.join(checkpoint_path, 'model.pt'))
-    torch.save(ema_model.state_dict(), os.path.join(checkpoint_path, 'model_ema.pt'))
+    # torch.save(diffusion._denoise_fn.state_dict(), os.path.join(checkpoint_path, 'model.pt'))
+    # torch.save(ema_model.state_dict(), os.path.join(checkpoint_path, 'model_ema.pt'))
+
+    torch.save(
+        {
+            'model_state_dict': diffusion._denoise_fn.state_dict(),
+            'ema_state_dict': ema_model.state_dict(),
+            'model_params': model_params,
+            'diffusion_params': {
+                'num_timesteps': num_timesteps,
+                'gaussian_loss_type': gaussian_loss_type,
+                'scheduler': scheduler
+            },
+            'encoding': {
+                'path': os.path.relpath(Path(exp_path).resolve(), Path(checkpoint_path).resolve())
+            },
+            'train_params': {
+                'epochs': epochs,
+                'lr': lr,
+                'weight_decay': weight_decay,
+                'batch_size': batch_size,
+                'seed': seed,
+                'num_workers': num_workers,
+                'dp_params': deepcopy(dp_params)
+            }
+        },
+        os.path.join(checkpoint_path, 'checkpoint.pt')
+    )
 
     loss_history.to_csv(os.path.join(log_path, 'loss.csv'), index=False)    
