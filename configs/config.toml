@@ -1,44 +1,59 @@
-data_path = "data/adult"
-exp_path = "exp/adult"
-device = "cuda:0"
 seed = 0
+device = "cuda:0"
 
-[model_params]
+[data]
+path = "data/adult"
+
+[experiment]
+path = "exp/adult/run_10"
+
+[encoding]
+num_encoder = "minmax"
+cat_encoder = "alb"
+seed = 42
+
+
+[model]
 is_y_cond = true
 num_classes = 2
 
-[model_params.rtdl_params]
+[model.rtdl_params]
 d_layers = [
-    512,
-    1024,
-    1024,
-    512,
+    128,
+    256,
+    256,
+    128,
 ]
 dropout = 0.0
+activation = 'SiLU'
 
-[diffusion_params]
+[diffusion]
 num_timesteps = 1000
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
-[train.main]
-epochs = 300
-lr = 0.00039806870482992913
+[train]
+seed = 0
+num_workers = 2
+epochs = 20
+lr = 0.0001   # No-dp: 0.0024384255846226824    0.00011205837185064171   0.00039806870482992913
 weight_decay = 0.0
 batch_size = 256
 
 [sample]
+seed = 4
+class_distribution = "empirical"
 num_samples = 29305
 batch_size = 256
-seed = 4
 
-[eval.type]
-eval_model = "catboost"
-eval_type = "synthetic"
+[evaluation]
+seed = 0
+models = ['catboost', 'tree', 'rf', 'lr', 'mlp']
+mode = "synthetic"
+catboost_params_path = "configs/adult/catboost.json"
 
-[dp]
+[privacy]
 is_dp = false
-epsilon = 1
-sigma = 1.9140625
+epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05

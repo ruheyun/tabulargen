@@ -51,6 +51,8 @@ class Trainer:
                 accountant='prv',
             )
 
+            print(f'noise: {noise_multiplier}')
+
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
                 module=self.diffusion,
@@ -104,7 +106,7 @@ class Trainer:
                     curr_count += len(x)
                     curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                    # self._anneal_lr(step)
+                    self._anneal_lr(step)
                     step += 1
                     # self._anneal_C(step)
 
@@ -158,7 +160,7 @@ def train(
     model_params = deepcopy(model_params)
     model_params['d_in'] = num_features
 
-    print(f'model params: {model_params} \n device: {device}')
+    print(f'model params: {model_params}\ndevice: {device}')
 
     loss_history = pd.DataFrame(columns=['step', 'loss'])
 

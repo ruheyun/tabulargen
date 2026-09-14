@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/adult"
 
 [experiment]
-path = "exp/adult/run_00"
+path = "exp/adult/run_10"
 
 [encoding]
 num_encoder = "minmax"
@@ -19,10 +19,10 @@ num_classes = 2
 
 [model.rtdl_params]
 d_layers = [
-    512,
-    1024,
-    1024,
-    512,
+    128,
+    256,
+    256,
+    128,
 ]
 dropout = 0.0
 activation = 'SiLU'
@@ -35,7 +35,7 @@ scheduler = "cosine"
 [train]
 seed = 0
 num_workers = 2
-epochs = 300
+epochs = 20
 lr = 0.0001   # No-dp: 0.0024384255846226824    0.00011205837185064171   0.00039806870482992913
 weight_decay = 0.0
 batch_size = 256
@@ -53,7 +53,7 @@ mode = "synthetic"
 catboost_params_path = "configs/adult/catboost.json"
 
 [privacy]
-is_dp = false
-epsilon = 1.0
+is_dp = true
+epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05

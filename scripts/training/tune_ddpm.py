@@ -55,9 +55,6 @@ def objective(trial):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ds_name', type=str, default='adult')
-parser.add_argument('--cf_name', type=str, default='config')
-parser.add_argument('--eval_model', type=str, default='catboost')
-parser.add_argument('--prefix', type=str, default='dm')
 parser.add_argument('--num_trials', type=int, default=10)
 
 args = parser.parse_args()
@@ -66,13 +63,10 @@ python_exec = sys.executable
 print(f"[INFO] Using Python executable: {python_exec}")
 
 ds_name = args.ds_name
-config_name = args.cf_name
-eval_model = args.eval_model
 num_trials = args.num_trials
-prefix = str(args.prefix + '_' + eval_model)
 
 pipeline = f'pipeline.py'
-base_config_path = f'configs/{ds_name}/{config_name}.toml'
+base_config_path = f'configs/config.toml'
 parent_path = Path(f'exp/{ds_name}/')
 exps_path = parent_path / 'many-exps'
 
