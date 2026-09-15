@@ -1,0 +1,10 @@
+{
+    "name": "king",
+    "task_type": "regression",
+    "num_classes": 0,
+    "n_num_features": 15,
+    "n_cat_features": 5,
+    "train_size": 13832,
+    "val_size": 3458,
+    "test_size": 4323
+}

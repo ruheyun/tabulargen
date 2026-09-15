@@ -1,0 +1,67 @@
+{
+    "columns": {
+        "C1": {
+            "sdtype": "numerical"
+        },
+        "C2": {
+            "sdtype": "numerical"
+        },
+        "C3": {
+            "sdtype": "categorical"
+        },
+        "C4": {
+            "sdtype": "numerical"
+        },
+        "C5": {
+            "sdtype": "numerical"
+        },
+        "C6": {
+            "sdtype": "numerical"
+        },
+        "C7": {
+            "sdtype": "numerical"
+        },
+        "C8": {
+            "sdtype": "categorical"
+        },
+        "C9": {
+            "sdtype": "numerical"
+        },
+        "C10": {
+            "sdtype": "numerical"
+        },
+        "C11": {
+            "sdtype": "numerical"
+        },
+        "C12": {
+            "sdtype": "numerical"
+        },
+        "C13": {
+            "sdtype": "numerical"
+        },
+        "C14": {
+            "sdtype": "numerical"
+        },
+        "C15": {
+            "sdtype": "numerical"
+        },
+        "C16": {
+            "sdtype": "numerical"
+        },
+        "C17": {
+            "sdtype": "numerical"
+        },
+        "C18": {
+            "sdtype": "categorical"
+        },
+        "C19": {
+            "sdtype": "categorical"
+        },
+        "C20": {
+            "sdtype": "categorical"
+        },
+        "label": {
+            "sdtype": "numerical"
+        }
+    }
+}

@@ -1,0 +1,34 @@
+{
+    "columns": {
+        "C1": {
+            "sdtype": "numerical"
+        },
+        "C2": {
+            "sdtype": "numerical"
+        },
+        "C3": {
+            "sdtype": "numerical"
+        },
+        "C4": {
+            "sdtype": "numerical"
+        },
+        "C5": {
+            "sdtype": "categorical"
+        },
+        "C6": {
+            "sdtype": "categorical"
+        },
+        "C7": {
+            "sdtype": "categorical"
+        },
+        "C8": {
+            "sdtype": "categorical"
+        },
+        "C9": {
+            "sdtype": "categorical"
+        },
+        "label": {
+            "sdtype": "categorical"
+        }
+    }
+}

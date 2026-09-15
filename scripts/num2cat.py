@@ -1,11 +1,13 @@
 import pandas as pd
 import string
 
-data_name = 'market'
+data_name = 'king'
 
-df = pd.read_csv(f'data/{data_name}/{data_name}.csv')
+split = 'test'
 
-threshold = 15  # 唯一值阈值
+df = pd.read_csv(f'data/{data_name}/{split}.csv')
+
+threshold = 25  # 唯一值阈值
 
 prefix_list = list(string.ascii_lowercase)  # ['a','b','c',...]
 
@@ -22,4 +24,4 @@ for col in df.columns:
             mapping = {val: f'{prefix}{i}' for i, val in enumerate(sorted(unique_vals))}
             df[col] = df[col].map(mapping)
 
-df.to_csv(f'data/{data_name}/{data_name}.csv', index=False)
+df.to_csv(f'data/{data_name}/{split}.csv', index=False)
