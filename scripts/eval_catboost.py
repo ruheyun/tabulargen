@@ -72,7 +72,7 @@ def train_catboost(
     model = CatBoostClassifier(
         loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
         **catboost_config,
-        eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'MacroF1',
+        eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
         random_seed=seed,
         class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
         allow_writing_files=False
@@ -109,10 +109,10 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'bank'
+    data_name = 'buddy'
 
     data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'tvae')
+    exp_path = os.path.join('exp', data_name, 'ctgan')
 
     sum_f1, sum_acc, sum_roc = 0, 0, 0
     for i in range(5):

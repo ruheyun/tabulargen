@@ -129,14 +129,14 @@ def evaluate_minority_ratio(real_data, synthetic_data, target_column):
 
 if __name__ == '__main__':
     # 数据集
-    data_name = 'house'
+    data_name = 'buddy'
     
     real_train_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_train.csv'))
-    get_metadata(real_train_data, data_name)
-    real_val_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
-    real_test_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_test.csv'))
-    val_test_data = pd.concat([real_val_data, real_test_data], ignore_index=True)
-    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'tvae', 'reverse.csv'))
+    # get_metadata(real_train_data, data_name)
+    # real_val_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
+    # real_test_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_test.csv'))
+    # val_test_data = pd.concat([real_val_data, real_test_data], ignore_index=True)
+    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'ctgan', 'reverse.csv'))
     synthetic_data.columns = real_train_data.columns
 
     
@@ -145,10 +145,10 @@ if __name__ == '__main__':
     column_shape(real_train_data, synthetic_data, metadata)
     print('==================================================')
 
-    dcr_base(real_train_data, synthetic_data, metadata)
-    print('==================================================')
+    # dcr_base(real_train_data, synthetic_data, metadata)
+    # print('==================================================')
 
-    dcr_over(real_train_data, val_test_data, synthetic_data, metadata)
-    print('==================================================')
+    # dcr_over(real_train_data, val_test_data, synthetic_data, metadata)
+    # print('==================================================')
 
-    evaluate_minority_ratio(real_train_data, synthetic_data, real_train_data.columns[-1])
+    # evaluate_minority_ratio(real_train_data, synthetic_data, real_train_data.columns[-1])
