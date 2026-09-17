@@ -11,7 +11,7 @@ from inspect import isfunction
 from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, balanced_accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, balanced_accuracy_score, mean_squared_error, r2_score, mean_absolute_percentage_error
 from sklearn.metrics import precision_recall_curve
 from opacus.grad_sample import GradSampleModule
 
@@ -181,6 +181,11 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         auc = roc_auc_score(y_true, y_prob)
 
         # balanced_acc = balanced_accuracy_score(y_true, y_label)
+        return {
+                'f1': f1,
+                'accuracy': acc,
+                'roc_auc': auc
+            }
 
     elif task_type == 'multiclass':
         y_prob = y_pred                      
@@ -189,14 +194,26 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         f1 = f1_score(y_true, y_label, average='macro')
         acc = accuracy_score(y_true, y_label)
         auc = roc_auc_score(y_true, y_prob, multi_class='ovr')
-    else:
-        raise 'Task type is error!'
 
-    return {
-        'f1': f1,
-        'accuracy': acc,
-        'roc_auc': auc
-    }
+        return {
+                'f1': f1,
+                'accuracy': acc,
+                'roc_auc': auc
+            }
+
+    elif task_type == 'regression':
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred)) 
+        r2 = r2_score(y_true, y_pred)
+        mape = mean_absolute_percentage_error(y_true, y_pred)
+
+        return {
+                'rmse': rmse,  # 越小越好, 0-无穷
+                'r2': r2,  # 越大越好，负无穷-1
+                'mape': mape  # 越小越好，0-无穷
+            }
+    
+    else:
+        raise ValueError('Task type is error! Must be binclass, multiclass, or regression.')
 
 
 def get_optimal_threshold_from_pr(y_true, y_prob):

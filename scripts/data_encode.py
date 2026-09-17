@@ -192,7 +192,7 @@ class LabelWrapper:
             return pd.DataFrame(self.encoder.transform(y).reshape(-1, 1))
 
         elif self.task == 'regression':
-            return self.encoder.transform(y.reshape(-1, 1)).reshape(-1)
+            return pd.DataFrame(self.encoder.transform(y.reshape(-1, 1)).reshape(-1))
 
     def Reverse(self, y):
         y = np.array(y)

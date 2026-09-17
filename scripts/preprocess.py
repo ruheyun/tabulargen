@@ -51,19 +51,17 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
     df_val_encoding.to_csv(os.path.join(exp_path, 'val.csv'), index=False)
     df_test_encoding.to_csv(os.path.join(exp_path, 'test.csv'), index=False)
 
-    dp_p_y = dp_histogram(
-        y_train_encoding,
-        num_classes=info['n_classes'],
-        epsilon=0.1,
-        delta=1e-5
-    )
-
-    info['dp_p_y'] = dp_p_y.tolist()
-
-    label_counts = y_train_encoding.value_counts().sort_index()
-    origin_p_y = (label_counts / label_counts.sum()).values 
-
-    info['origin_p_y'] = origin_p_y.tolist()
+    if info['task_type'] != 'regression':
+        dp_p_y = dp_histogram(
+            y_train_encoding,
+            num_classes=info['n_classes'],
+            epsilon=0.1,
+            delta=1e-5
+        )
+        info['dp_p_y'] = dp_p_y.tolist()
+        label_counts = y_train_encoding.value_counts().sort_index()
+        origin_p_y = (label_counts / label_counts.sum()).values 
+        info['origin_p_y'] = origin_p_y.tolist()
 
     with open(os.path.join(exp_path, 'info.json'), 'w') as f:
         json.dump(info, f)
@@ -76,6 +74,6 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb')
 
 
 if __name__ == '__main__':
-    data_path = 'data/buddy'
-    exp_path = 'exp/buddy'
+    data_path = 'data/california'
+    exp_path = 'exp/california'
     data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb')

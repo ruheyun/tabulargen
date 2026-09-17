@@ -3,7 +3,7 @@ import delu
 import json
 import pandas as pd
 from pprint import pprint
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, CatBoostRegressor
 from sklearn.preprocessing import LabelEncoder
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,10 +44,15 @@ def train_catboost(
         'test': test_data.values[:, :-1],
     }
 
-    le = LabelEncoder()
-    y_train = le.fit_transform(train_data.values[:, -1])
-    y_val = le.transform(val_data.values[:, -1])
-    y_test = le.transform(test_data.values[:, -1])
+    if info['task_type'] == 'regression':
+        y_train = train_data.values[:, -1].astype(float)
+        y_val = val_data.values[:, -1].astype(float)
+        y_test = test_data.values[:, -1].astype(float)
+    else:
+        le = LabelEncoder()
+        y_train = le.fit_transform(train_data.values[:, -1])
+        y_val = le.transform(val_data.values[:, -1])
+        y_test = le.transform(test_data.values[:, -1])
 
     y = {
         'train': y_train,
@@ -69,20 +74,28 @@ def train_catboost(
     pprint(catboost_config, width=100)
     print('-' * 100)
 
-    model = CatBoostClassifier(
-        loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
-        **catboost_config,
-        eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
-        random_seed=seed,
-        class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
-        allow_writing_files=False
-    )
+    if info['task_type'] == 'regression':
+        model = CatBoostRegressor(
+            **catboost_config,
+            eval_metric='RMSE',
+            random_seed=seed
+        )
+        predict = model.predict
 
-    predict = (
-        model.predict_proba
-        if info['task_type'] == 'multiclass'
-        else lambda x: model.predict_proba(x)[:, 1]
-    )
+    else:
+        model = CatBoostClassifier(
+            loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
+            **catboost_config,
+            eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
+            random_seed=seed,
+            class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
+            allow_writing_files=False
+        )
+        predict = (
+            model.predict_proba
+            if info['task_type'] == 'multiclass'
+            else lambda x: model.predict_proba(x)[:, 1]
+        )
 
     model.fit(X['train'], y['train'], eval_set=(X['val'], y['val']), verbose=100)
 
@@ -109,18 +122,37 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'buddy'
+    data_name = 'california'
+    task_type = 'regression'  # 或 'binclass' / 'multiclass'
+    n_seeds = 5
 
     data_path = os.path.join('data', data_name)
     exp_path = os.path.join('exp', data_name, 'ctgan')
 
-    sum_f1, sum_acc, sum_roc = 0, 0, 0
-    for i in range(5):
-        res = train_catboost(data_path, exp_path, seed=i, eval_type='synthetic')
-        sum_f1 += res['test']['f1']
-        sum_acc += res['test']['accuracy']
-        sum_roc += res['test']['roc_auc']
+    if task_type in ('binclass', 'multiclass'):
+        sum_f1, sum_acc, sum_roc = 0, 0, 0
+        for i in range(n_seeds):
+            res = train_catboost(data_path, exp_path, seed=i, eval_type='synthetic')
+            sum_f1  += res['test']['f1']
+            sum_acc += res['test']['accuracy']
+            sum_roc += res['test']['roc_auc']
 
-    print(
-        f'avg_f1: {sum_f1 / 5: .4f}, avg_acc: {sum_acc / 5: .4f}, avg_roc: {sum_roc / 5: .4f}'
-    )
+        print(
+            f'avg_f1: {sum_f1 / n_seeds:.4f}, '
+            f'avg_acc: {sum_acc / n_seeds:.4f}, '
+            f'avg_roc: {sum_roc / n_seeds:.4f}'
+        )
+
+    elif task_type == 'regression':
+        sum_rmse, sum_r2, sum_mape = 0, 0, 0
+        for i in range(n_seeds):
+            res = train_catboost(data_path, exp_path, seed=i, eval_type='synthetic')
+            sum_rmse += res['test']['rmse']
+            sum_r2   += res['test']['r2']
+            sum_mape += res['test']['mape']
+
+        print(
+            f'avg_rmse: {sum_rmse / n_seeds:.4f}, '
+            f'avg_r2: {sum_r2 / n_seeds:.4f}, '
+            f'avg_mape: {sum_mape / n_seeds:.4f}'
+        )
