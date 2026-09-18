@@ -122,7 +122,7 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'california'
+    data_name = 'house'
     task_type = 'regression'  # 或 'binclass' / 'multiclass'
     n_seeds = 5
 
