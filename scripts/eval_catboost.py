@@ -78,7 +78,8 @@ def train_catboost(
         model = CatBoostRegressor(
             **catboost_config,
             eval_metric='RMSE',
-            random_seed=seed
+            random_seed=seed,
+            allow_writing_files=False
         )
         predict = model.predict
 
