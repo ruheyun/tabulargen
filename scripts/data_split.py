@@ -57,5 +57,5 @@ def data_split(data_path):
 
 
 if __name__ == '__main__':
-    data_path = 'data/beijing'
+    data_path = 'data/shoppers'
     data_split(data_path)

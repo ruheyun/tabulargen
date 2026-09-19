@@ -1,0 +1,58 @@
+{
+    "columns": {
+        "Administrative_Duration": {
+            "sdtype": "numerical"
+        },
+        "Informational_Duration": {
+            "sdtype": "numerical"
+        },
+        "ProductRelated": {
+            "sdtype": "numerical"
+        },
+        "ProductRelated_Duration": {
+            "sdtype": "numerical"
+        },
+        "BounceRates": {
+            "sdtype": "numerical"
+        },
+        "ExitRates": {
+            "sdtype": "numerical"
+        },
+        "PageValues": {
+            "sdtype": "numerical"
+        },
+        "SpecialDay": {
+            "sdtype": "numerical"
+        },
+        "Administrative": {
+            "sdtype": "categorical"
+        },
+        "Informational": {
+            "sdtype": "categorical"
+        },
+        "Month": {
+            "sdtype": "categorical"
+        },
+        "OperatingSystems": {
+            "sdtype": "categorical"
+        },
+        "Browser": {
+            "sdtype": "categorical"
+        },
+        "Region": {
+            "sdtype": "categorical"
+        },
+        "TrafficType": {
+            "sdtype": "categorical"
+        },
+        "VisitorType": {
+            "sdtype": "categorical"
+        },
+        "Weekend": {
+            "sdtype": "categorical"
+        },
+        "Revenue": {
+            "sdtype": "categorical"
+        }
+    }
+}

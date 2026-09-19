@@ -1,17 +1,22 @@
 import pandas as pd
 import string
 
-data_name = 'beijing'
+data_name = 'shoppers'
 
-split = 'beijing'
+split = 'shoppers'
 
 df = pd.read_csv(f'data/{data_name}/{split}.csv')
 
-df.dropna(inplace=True, subset=['pm2.5'])
+df.dropna(inplace=True, subset=['Revenue'])
 
 threshold = 32  # 唯一值阈值
 
-prefix_list = list(string.ascii_lowercase)  # ['a','b','c',...]
+# prefix_list = list(string.ascii_lowercase)  # ['a','b','c',...]
+
+prefix_list = list(string.ascii_lowercase) + [
+    a + b for a in string.ascii_lowercase
+          for b in string.ascii_lowercase
+]
 
 prefix_idx = 0
 
