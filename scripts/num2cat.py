@@ -1,13 +1,15 @@
 import pandas as pd
 import string
 
-data_name = 'king'
+data_name = 'beijing'
 
-split = 'test'
+split = 'beijing'
 
 df = pd.read_csv(f'data/{data_name}/{split}.csv')
 
-threshold = 25  # 唯一值阈值
+df.dropna(inplace=True, subset=['pm2.5'])
+
+threshold = 32  # 唯一值阈值
 
 prefix_list = list(string.ascii_lowercase)  # ['a','b','c',...]
 

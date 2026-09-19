@@ -16,13 +16,24 @@ def data_split(data_path):
     X_reordered = X[num_cols + cat_cols]
     df_final = pd.concat([X_reordered, y], axis=1)
 
-    idx_train, idx_temp = train_test_split(
-        df.index, test_size=0.40, random_state=42, stratify=y
-    )
+    task_type = ('binclass' if len(y.unique()) == 2 else 'multiclass') if len(y.unique()) < 100 else 'regression'
 
-    idx_val, idx_test = train_test_split(
-        idx_temp, test_size=0.50, random_state=42, stratify=y[idx_temp]
-    )
+    if task_type == 'regression':
+        idx_train, idx_temp = train_test_split(
+            df.index, test_size=0.40, random_state=42
+        )
+
+        idx_val, idx_test = train_test_split(
+            idx_temp, test_size=0.50, random_state=42
+        )
+    else:
+        idx_train, idx_temp = train_test_split(
+                df.index, test_size=0.40, random_state=42, stratify=y
+            )
+        
+        idx_val, idx_test = train_test_split(
+            idx_temp, test_size=0.50, random_state=42, stratify=y[idx_temp]
+        )
 
     df_final.loc[idx_train].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_train.csv'), index=False)
     df_final.loc[idx_val].reset_index(drop=True).to_csv(os.path.join(data_path, f'{data_name}_val.csv'), index=False)
@@ -30,7 +41,7 @@ def data_split(data_path):
 
     info = {
         'name': f'{data_name}',
-        'task_type': ('binclass' if len(y.unique()) == 2 else 'multiclass') if len(y.unique()) < 100 else 'regression',
+        'task_type': task_type,
         'n_classes': len(y.unique()) if len(y.unique()) < 100 else 0,
         'n_num_features': len(num_cols),
         'n_cat_features': len(cat_cols),
@@ -46,5 +57,5 @@ def data_split(data_path):
 
 
 if __name__ == '__main__':
-    data_path = 'data/california'
+    data_path = 'data/beijing'
     data_split(data_path)
