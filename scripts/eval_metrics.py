@@ -129,15 +129,15 @@ def evaluate_minority_ratio(real_data, synthetic_data, target_column):
 
 if __name__ == '__main__':
     # 数据集
-    data_name = 'buddy'
+    data_name = 'adult'
     
     real_train_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_train.csv'))
     # get_metadata(real_train_data, data_name)
     # real_val_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_val.csv'))
     # real_test_data = pd.read_csv(os.path.join('data', data_name, f'{data_name}_test.csv'))
     # val_test_data = pd.concat([real_val_data, real_test_data], ignore_index=True)
-    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'tvae', 'reverse.csv'))
-    synthetic_data.columns = real_train_data.columns
+    synthetic_data = pd.read_csv(os.path.join('exp', data_name, 'findiff', 'reverse.csv'))
+    # synthetic_data.columns = real_train_data.columns
 
     
     metadata = load_json(f'data/{data_name}/metadata.json')

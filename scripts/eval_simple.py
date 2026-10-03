@@ -140,12 +140,12 @@ def train_simple(
 
 
 if __name__ == '__main__':
-    data_name = 'buddy'
-    task_type = 'multiclass'  # 或 'binclass' / 'multiclass' / 'regression'
+    data_name = 'adult'
+    task_type = 'binclass'  # 或 'binclass' / 'multiclass' / 'regression'
     n_seeds = 5
 
     data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'tvae')
+    exp_path = os.path.join('exp', data_name, 'findiff')
 
     if task_type in ('binclass', 'multiclass'):
         sum_f1, sum_acc, sum_roc = 0, 0, 0
