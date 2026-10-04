@@ -140,7 +140,7 @@ def train_simple(
 
 
 if __name__ == '__main__':
-    data_name = 'adult'
+    data_name = 'market'
     task_type = 'binclass'  # 或 'binclass' / 'multiclass' / 'regression'
     n_seeds = 5
 

@@ -124,7 +124,7 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'adult'
+    data_name = 'market'
     task_type = 'binclass'  # 或 'binclass' / 'multiclass'
     n_seeds = 5
 
