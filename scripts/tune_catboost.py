@@ -3,6 +3,7 @@ import optuna
 import argparse
 import json
 from eval_catboost import train_catboost
+from preprocess import data_process
 
 
 def suggest_catboost_params(trial):
@@ -50,6 +51,9 @@ n_trials = args.n_trials
 data_path = os.path.join('data', data_name)
 exp_path = os.path.join('exp', data_name)
 os.makedirs(exp_path, exist_ok=True)
+
+data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb')
+
 
 study = optuna.create_study(
     sampler=optuna.samplers.TPESampler(seed=0),
