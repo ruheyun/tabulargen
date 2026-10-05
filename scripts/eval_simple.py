@@ -59,7 +59,7 @@ def train_simple(
     }
 
     y = {
-        'train': label_data.values,
+        'train': label_data.values[:, -1],
         'val': val_data.values[:, -1],
         'test': test_data.values[:, -1],
     }
@@ -103,7 +103,7 @@ def train_simple(
         }
 
         results = {
-            k: evaluate(y[k], predictions[k], info['task_type'])
+            k: evaluate(y[k], predictions[k], info['task_type'], exp_path)
             for k in predictions
         }
 
@@ -140,8 +140,8 @@ def train_simple(
 
 
 if __name__ == '__main__':
-    data_name = 'market'
-    task_type = 'binclass'  # 或 'binclass' / 'multiclass' / 'regression'
+    data_name = 'king'
+    task_type = 'regression'  # 或 'binclass' / 'multiclass' / 'regression'
     n_seeds = 5
 
     data_path = os.path.join('data', data_name)

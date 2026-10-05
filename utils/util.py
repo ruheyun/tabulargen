@@ -3,6 +3,7 @@ import os
 import json
 import tomllib
 import tomli_w
+import pickle
 import numpy as np
 import pandas as pd
 import csv
@@ -171,7 +172,7 @@ class TabularDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 
-def evaluate(y_true, y_pred, task_type, threshold=0.5):
+def evaluate(y_true, y_pred, task_type, exp_path, threshold=0.5):
     if task_type == 'binclass':
         y_prob = y_pred                      
         y_label = (y_prob > threshold).astype(int)
@@ -204,6 +205,11 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
     elif task_type == 'regression':
         rmse = np.sqrt(mean_squared_error(y_true, y_pred)) 
         r2 = r2_score(y_true, y_pred)
+
+        with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
+            label_wrapper = pickle.load(f)
+        y_true = label_wrapper.reverse(y_true)
+        y_pred = label_wrapper.reverse(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
 
         return {

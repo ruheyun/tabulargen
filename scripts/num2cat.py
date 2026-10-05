@@ -1,13 +1,13 @@
 import pandas as pd
 import string
 
-data_name = 'shoppers'
+data_name = 'king'
 
-split = 'shoppers'
+split = 'king'
 
 df = pd.read_csv(f'data/{data_name}/{split}.csv')
 
-df.dropna(inplace=True, subset=['Revenue'])
+df.dropna(inplace=True, subset=['label'])
 
 threshold = 32  # 唯一值阈值
 

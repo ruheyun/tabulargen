@@ -1,6 +1,7 @@
 import os
 import delu
 import json
+import pickle
 import pandas as pd
 import numpy as np
 from pprint import pprint
@@ -46,9 +47,15 @@ def train_catboost(
     }
 
     if info['task_type'] == 'regression':
-        y_train = train_data.values[:, -1].astype(float)
-        y_val = val_data.values[:, -1].astype(float)
-        y_test = test_data.values[:, -1].astype(float)
+        with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
+            label_wrapper = pickle.load(f)
+        y_train = label_wrapper.transform(train_data.iloc[:, -1].values)
+        y_val = label_wrapper.transform(val_data.iloc[:, -1].values)
+        y_test = label_wrapper.transform(test_data.iloc[:, -1].values)
+        
+        # y_train = train_data.values[:, -1].astype(float)
+        # y_val = val_data.values[:, -1].astype(float)
+        # y_test = test_data.values[:, -1].astype(float)
     else:
         le = LabelEncoder()
         y_train = le.fit_transform(train_data.values[:, -1])
@@ -109,7 +116,7 @@ def train_catboost(
     # threshold = get_optimal_threshold_from_pr(y['val'], predictions['val'])
 
     results = {
-        k: evaluate(y[k], predictions[k], info['task_type'])
+        k: evaluate(y[k], predictions[k], info['task_type'], exp_path)
         for k in predictions
     }
 
@@ -124,8 +131,8 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'market'
-    task_type = 'binclass'  # 或 'binclass' / 'multiclass'
+    data_name = 'king'
+    task_type = 'regression'  # 或 'binclass' / 'multiclass' / 'regression'
     n_seeds = 5
 
     data_path = os.path.join('data', data_name)

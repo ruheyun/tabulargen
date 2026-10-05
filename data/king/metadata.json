@@ -6,9 +6,6 @@
         "C2": {
             "sdtype": "numerical"
         },
-        "C3": {
-            "sdtype": "categorical"
-        },
         "C4": {
             "sdtype": "numerical"
         },
@@ -20,9 +17,6 @@
         },
         "C7": {
             "sdtype": "numerical"
-        },
-        "C8": {
-            "sdtype": "categorical"
         },
         "C9": {
             "sdtype": "numerical"
@@ -50,6 +44,12 @@
         },
         "C17": {
             "sdtype": "numerical"
+        },
+        "C3": {
+            "sdtype": "categorical"
+        },
+        "C8": {
+            "sdtype": "categorical"
         },
         "C18": {
             "sdtype": "categorical"
