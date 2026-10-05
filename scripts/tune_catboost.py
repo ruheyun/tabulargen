@@ -14,7 +14,7 @@ def suggest_catboost_params(trial):
     }
 
     params = params | {
-        "iterations": 3000,
+        "iterations": 2000,
         "early_stopping_rounds": 50,
         "od_pval": 0.001,
         "task_type": "CPU",
@@ -35,13 +35,13 @@ def objective(trial):
         eval_type="real",
         params=params,
     )
-    score = results['val']['f1']
+    score = results['val']['r2']
 
     return score
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ds_name', type=str, default='market')
+parser.add_argument('--ds_name', type=str, default='beijing')
 parser.add_argument('--n_trials', type=int, default=100)
 
 args = parser.parse_args()
