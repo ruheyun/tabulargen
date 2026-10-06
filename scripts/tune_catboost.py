@@ -36,7 +36,7 @@ def objective(trial):
         eval_type="real",
         params=params,
     )
-    score = results['val']['r2']
+    score = results['val']['roc_auc']
 
     return score
 

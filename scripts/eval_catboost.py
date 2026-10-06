@@ -131,7 +131,7 @@ def train_catboost(
 
 
 if __name__ == '__main__':
-    data_name = 'king'
+    data_name = 'beijing'
     task_type = 'regression'  # 或 'binclass' / 'multiclass' / 'regression'
     n_seeds = 5
 
