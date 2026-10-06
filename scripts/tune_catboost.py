@@ -42,7 +42,7 @@ def objective(trial):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ds_name', type=str, default='beijing')
+parser.add_argument('--ds_name', type=str, default='shoppers')
 parser.add_argument('--n_trials', type=int, default=100)
 
 args = parser.parse_args()
