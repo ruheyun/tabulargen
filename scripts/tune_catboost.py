@@ -57,7 +57,7 @@ data_process(data_path, exp_path, num_encoder='minmax', cat_encoder='alb')
 
 study = optuna.create_study(
     sampler=optuna.samplers.TPESampler(seed=0),
-    direction='maximize'
+    direction='maximize'  # minimize
 )
 
 study.optimize(objective, n_trials=n_trials, show_progress_bar=True)

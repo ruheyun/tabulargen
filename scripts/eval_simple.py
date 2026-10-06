@@ -145,7 +145,7 @@ if __name__ == '__main__':
     n_seeds = 5
 
     data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'findiff')
+    exp_path = os.path.join('exp', data_name, 'ctgan')
 
     if task_type in ('binclass', 'multiclass'):
         sum_f1, sum_acc, sum_roc = 0, 0, 0
