@@ -3,6 +3,9 @@ from torch.utils.data import DataLoader
 import argparse
 import torch
 import math
+import numpy as np
+from scipy.optimize import brentq
+from scipy.stats import norm
 import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,30 +31,79 @@ def dp_histogram(labels, num_classes, epsilon=0.1, delta=1e-5):
     return p_y.numpy()
 
 
-def mechanism(
-        exp_path='exp/adult',
-        epochs=100,
-        batch_size=256,
-        target_epsilon=10,
-        target_delta=1e-5,
-):
+# class RDPAccountant:
+#     def __init__(self, sample_rate, steps):
+#         self.q = sample_rate
+#         self.steps = steps
 
-    dataset = TabularDataset(exp_path)
+#     def rdp_get_noise_multiplier(self, epsilon, delta):
 
-    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
+#         noise_multiplier = get_noise_multiplier(
+#                         target_epsilon=epsilon,
+#                         target_delta=delta,
+#                         sample_rate=self.q,
+#                         steps=self.steps,
+#                         accountant='rdp',
+#                     )
+            
+#         return noise_multiplier
 
-    sample_rate = 1 / len(train_loader)
 
-    noise_multiplier = get_noise_multiplier(
-                target_epsilon=target_epsilon,
-                target_delta=target_delta,
-                sample_rate=sample_rate,
-                epochs=epochs,
-                accountant='prv',
+class Accountant:
+    def __init__(self, sample_rate, steps):
+        self.q = sample_rate
+        self.steps = steps
+
+    def rdp_get_noise_multiplier(self, epsilon, delta):
+        noise_multiplier = get_noise_multiplier(
+                        target_epsilon=epsilon,
+                        target_delta=delta,
+                        sample_rate=self.q,
+                        steps=self.steps,
+                        accountant='rdp',
+                    )
+            
+        return noise_multiplier
+
+    def gdp_get_mu(self, noise_multiplier):
+        sigma = noise_multiplier
+
+        return self.q * np.sqrt(
+            self.steps * (np.exp(1.0 / sigma**2) - 1.0)
+        )
+
+    @staticmethod
+    def gdp_delta_from_mu(epsilon, mu):
+        if mu <= 0:
+            return 0.0
+
+        return (
+            norm.cdf(mu / 2 - epsilon / mu)
+            - np.exp(epsilon)
+            * norm.cdf(-mu / 2 - epsilon / mu)
+        )
+
+    def gdp_get_epsilon(self, noise_multiplier, delta):
+        mu = self.gdp_get_mu(noise_multiplier)
+
+        def func(epsilon):
+            return self.gdp_delta_from_mu(epsilon, mu) - delta
+
+        return brentq(func, 0.0, 1000.0)
+
+    def gdp_get_noise_multiplier(self, epsilon, delta):
+
+        def func(sigma):
+            mu = self.gdp_get_mu(sigma)
+
+            delta1 = self.gdp_delta_from_mu(
+                epsilon,
+                mu,
             )
-    
-    print(noise_multiplier)
-    return noise_multiplier
+
+            return delta1 - delta
+
+        return brentq(func, 0.1, 100.0)
 
 
 if __name__ == '__main__':
@@ -59,12 +111,17 @@ if __name__ == '__main__':
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
     args = parser.parse_args()
     raw_config = load_config(args.config)
-    noise = mechanism(
-        exp_path=raw_config['exp_path'], 
-        epochs=raw_config['train']['main']['epochs'], 
-        batch_size=raw_config['train']['main']['batch_size'], 
-        target_epsilon=raw_config['dp']['epsilon']
-    )
+    exp_path = raw_config['exp_path']
+    batch_size = raw_config['train']['main']['batch_size']
+    epochs = raw_config['train']['main']['epochs']
+    dataset = TabularDataset(exp_path)
+    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
+    sample_rate = 1 / len(train_loader)
+    steps = int(epochs / sample_rate)
+
+    accountant = Accountant(sample_rate, steps)
+
+    noise = accountant.gdp_get_noise_multiplier(epsilon=10, delta=1e-5)
 
     raw_config['dp']['sigma'] = noise
 
