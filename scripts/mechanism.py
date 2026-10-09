@@ -5,6 +5,7 @@ import torch
 import math
 import numpy as np
 from scipy.optimize import brentq
+from scipy.special import gammaln, logsumexp
 from scipy.stats import norm
 import os
 import sys
@@ -53,6 +54,57 @@ class Accountant:
     def __init__(self, sample_rate, steps):
         self.q = sample_rate
         self.steps = steps
+
+    def ma_get_epsilon(self, noise_multiplier, delta, max_order=100):
+        sigma = noise_multiplier
+
+        epsilons = []
+        for lam in range(1, max_order + 1):
+            alpha = lam + 1
+            i = np.arange(alpha + 1)
+
+            log_binom = (
+                gammaln(alpha + 1)
+                - gammaln(i + 1)
+                - gammaln(alpha - i + 1)
+            )
+
+            log_terms = (
+                log_binom
+                + i * np.log(self.q)
+                + (alpha - i) * np.log1p(-self.q)
+                + (i**2 - i) / (2 * sigma**2)
+            ) if self.q < 1 else np.where(
+                i == alpha,
+                (i**2 - i) / (2 * sigma**2),
+                -np.inf,
+            )
+
+            log_a = logsumexp(log_terms)
+            log_moment = self.steps * log_a
+
+            eps = (
+                log_moment + np.log(1 / delta)
+            ) / lam
+
+            epsilons.append(eps)
+
+        return max(0.0, min(epsilons))
+
+    def ma_get_noise_multiplier(self, epsilon, delta, max_order=100):
+        def objective(sigma):
+            return (
+                self.ma_get_epsilon(
+                    noise_multiplier=sigma,
+                    delta=delta,
+                    max_order=max_order
+                )
+                - epsilon
+            )
+
+        noise_multiplier = brentq(objective, 0.01, 1e4)
+
+        return noise_multiplier
 
     def rdp_get_noise_multiplier(self, epsilon, delta):
         noise_multiplier = get_noise_multiplier(
@@ -121,8 +173,11 @@ if __name__ == '__main__':
 
     accountant = Accountant(sample_rate, steps)
 
-    noise = accountant.gdp_get_noise_multiplier(epsilon=10, delta=1e-5)
+    ma_noise = accountant.ma_get_noise_multiplier(epsilon=1, delta=1e-5)
+    rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=1, delta=1e-5)
+    gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=1, delta=1e-5)
+    print(f'ma_noise: {ma_noise}\nrdp_noise: {rdp_noise}\ngdp_noise: {gdp_noise}')
 
-    raw_config['dp']['sigma'] = noise
+    # raw_config['dp']['sigma'] = noise
 
-    dump_config(raw_config, args.config)
+    # dump_config(raw_config, args.config)

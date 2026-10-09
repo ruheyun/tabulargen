@@ -15,6 +15,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
+from mechanism import Accountant
 # from analyze_grad import GradNormAnalyzer
 
 
@@ -41,14 +42,11 @@ class Trainer:
         self.is_print_grad = False
 
         if self.is_dp:
-
-            noise_multiplier = get_noise_multiplier(
-                target_epsilon=self.epsilon,
-                target_delta=self.delta,
-                sample_rate=1 / len(train_iter),
-                epochs=self.epochs,
-                accountant='prv',
-            )
+            sample_rate = 1 / len(train_iter)
+            accountant = Accountant(sample_rate, self.steps)
+            gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
+            # rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=0.5, delta=1e-5)
+            noise_multiplier = gdp_noise
 
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
