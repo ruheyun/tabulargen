@@ -133,7 +133,7 @@ class Trainer:
 def train(
         exp_path='exp/adult/run_00/encoded',
         epochs=50,
-        lr=3e-4,
+        lr=1e-4,
         weight_decay=0.0,
         batch_size=128,
         model_params=None,
