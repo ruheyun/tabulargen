@@ -4,7 +4,7 @@ import json
 import torch
 import numpy as np
 import delu
-from tqdm import trange
+from tqdm import trange, tqdm
 import pandas as pd
 from opacus import PrivacyEngine
 from opacus.accountants.utils import get_noise_multiplier
@@ -105,42 +105,68 @@ class Trainer:
         # self.analyzer.clear_grad_sample()
         return loss
 
-    def run_loop(self):
-        curr_loss_gauss = 0.0
-        curr_count = 0
-        with trange(self.steps, unit="step", dynamic_ncols=True) as pbar:
-            step = 0
-            for epoch in range(self.epochs):
-                for x, out_dict in self.train_iter:
-                    out_dict = {'y': out_dict}
-                    batch_loss_gauss = self._run_step(x, out_dict)
+    # def run_loop(self):
+    #     curr_loss_gauss = 0.0
+    #     curr_count = 0
+    #     with trange(self.steps, unit="step", dynamic_ncols=True) as pbar:
+    #         step = 0
+    #         for epoch in range(self.epochs):
+    #             for x, out_dict in self.train_iter:
+    #                 out_dict = {'y': out_dict}
+    #                 batch_loss_gauss = self._run_step(x, out_dict)
 
-                    curr_count += len(x)
-                    curr_loss_gauss += batch_loss_gauss.item() * len(x)
+    #                 curr_count += len(x)
+    #                 curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                    # self._anneal_lr(step)
-                    step += 1
-                    # self._anneal_C(step)
+    #                 # self._anneal_lr(step)
+    #                 step += 1
+    #                 # self._anneal_C(step)
 
-                    update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
+    #                 update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 
-                    if (step + 1) % self.log_every == 0:
-                        loss = np.around(curr_loss_gauss / curr_count, 3)
-                        pbar.set_postfix({
-                            'Loss': round(loss, 3),
-                        })
+    #                 if (step + 1) % self.log_every == 0:
+    #                     loss = np.around(curr_loss_gauss / curr_count, 3)
+    #                     pbar.set_postfix({
+    #                         'Loss': round(loss, 3),
+    #                     })
                         
-                        self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
-                        curr_count = 0
-                        curr_loss_gauss = 0.0
+    #                     self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
+    #                     curr_count = 0
+    #                     curr_loss_gauss = 0.0
 
-                    pbar.update(1)
+    #                 pbar.update(1)
+             
+    #     print(
+    #         f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']})-DP training done!'
+    #         if self.is_dp else 'No-DP training done!'
+    #     )
+
+    def run_loop(self):
+        pbar = tqdm(iterable=range(self.epochs), position=0, leave=True)
+        step = 0
+        for epoch in range(self.epochs):
+            curr_loss_gauss = 0.0
+            curr_count = 0
+            for x, out_dict in self.train_iter:
+                out_dict = {'y': out_dict}
+                batch_loss_gauss = self._run_step(x, out_dict)
+
+                curr_count += len(x)
+                curr_loss_gauss += batch_loss_gauss.item() * len(x)
+
+                update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
+                
+                step += 1
+                self._anneal_lr(step)
+
+            loss = np.around(curr_loss_gauss / curr_count, 4)
+            pbar.set_description(f"Epoch {epoch + 1:04d} | Train Loss: {loss:.3f}")
+            pbar.update(1)
              
         print(
             f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']})-DP training done!'
             if self.is_dp else 'No-DP training done!'
         )
-
 
 def train(
         exp_path='exp/adult',
