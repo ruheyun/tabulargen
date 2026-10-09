@@ -208,8 +208,8 @@ def evaluate(y_true, y_pred, task_type, exp_path, threshold=0.5):
 
         with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
             label_wrapper = pickle.load(f)
-        y_true = label_wrapper.reverse(y_true)
-        y_pred = label_wrapper.reverse(y_pred)
+        y_true = label_wrapper.Reverse(y_true)
+        y_pred = label_wrapper.Reverse(y_pred)
         mape = mean_absolute_percentage_error(y_true, y_pred)
 
         return {
