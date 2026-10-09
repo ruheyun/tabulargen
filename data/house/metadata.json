@@ -1,0 +1,55 @@
+{
+    "columns": {
+        "C1": {
+            "sdtype": "numerical"
+        },
+        "C2": {
+            "sdtype": "numerical"
+        },
+        "C3": {
+            "sdtype": "numerical"
+        },
+        "C4": {
+            "sdtype": "numerical"
+        },
+        "C5": {
+            "sdtype": "numerical"
+        },
+        "C6": {
+            "sdtype": "numerical"
+        },
+        "C7": {
+            "sdtype": "numerical"
+        },
+        "C8": {
+            "sdtype": "numerical"
+        },
+        "C9": {
+            "sdtype": "numerical"
+        },
+        "C10": {
+            "sdtype": "numerical"
+        },
+        "C11": {
+            "sdtype": "numerical"
+        },
+        "C12": {
+            "sdtype": "numerical"
+        },
+        "C13": {
+            "sdtype": "numerical"
+        },
+        "C14": {
+            "sdtype": "numerical"
+        },
+        "C15": {
+            "sdtype": "numerical"
+        },
+        "C16": {
+            "sdtype": "numerical"
+        },
+        "label": {
+            "sdtype": "numerical"
+        }
+    }
+}

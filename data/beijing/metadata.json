@@ -1,0 +1,40 @@
+{
+    "columns": {
+        "DEWP": {
+            "sdtype": "numerical"
+        },
+        "TEMP": {
+            "sdtype": "numerical"
+        },
+        "PRES": {
+            "sdtype": "numerical"
+        },
+        "Iws": {
+            "sdtype": "numerical"
+        },
+        "Ir": {
+            "sdtype": "numerical"
+        },
+        "year": {
+            "sdtype": "categorical"
+        },
+        "month": {
+            "sdtype": "categorical"
+        },
+        "day": {
+            "sdtype": "categorical"
+        },
+        "hour": {
+            "sdtype": "categorical"
+        },
+        "cbwd": {
+            "sdtype": "categorical"
+        },
+        "Is": {
+            "sdtype": "categorical"
+        },
+        "pm2.5": {
+            "sdtype": "numerical"
+        }
+    }
+}

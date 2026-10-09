@@ -1,0 +1,10 @@
+{
+    "name": "beijing",
+    "task_type": "regression",
+    "n_classes": 0,
+    "n_num_features": 5,
+    "n_cat_features": 6,
+    "train_size": 25054,
+    "val_size": 8351,
+    "test_size": 8352
+}

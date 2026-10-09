@@ -1,0 +1,10 @@
+{
+    "name": "shoppers",
+    "task_type": "binclass",
+    "n_classes": 2,
+    "n_num_features": 8,
+    "n_cat_features": 9,
+    "train_size": 7398,
+    "val_size": 2466,
+    "test_size": 2466
+}
