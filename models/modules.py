@@ -144,6 +144,88 @@ class MLP(nn.Module):
         return x
 
 
+class ResNet(nn.Module):
+
+    class Block(nn.Module):
+
+        def __init__(
+            self,
+            *,
+            d_main: int,
+            activation: str = 'SiLU',
+        ) -> None:
+            super().__init__()
+
+            self.linear_first = nn.Linear(d_main, d_main)
+            self.linear_second = nn.Linear(d_main, d_main)
+            self.activation = _make_nn_module(activation)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            x_input = x
+
+            x = self.linear_first(x)
+            x = self.activation(x)
+            x = self.linear_second(x)
+
+            return x_input + x
+
+    def __init__(
+        self,
+        *,
+        d_in: int,
+        d_main: int,
+        n_blocks: int,
+        d_out: int,
+        activation: str = 'SiLU',
+    ) -> None:
+        super().__init__()
+
+        self.first_layer = nn.Linear(d_in, d_main)
+
+        self.blocks = nn.ModuleList(
+            [
+                ResNet.Block(
+                    d_main=d_main,
+                    activation=activation,
+                )
+                for _ in range(n_blocks)
+            ]
+        )
+
+        self.head = nn.Linear(d_main, d_out)
+
+    @classmethod
+    def make_baseline(
+        cls: Type['ResNet'],
+        *,
+        d_in: int,
+        d_main: int,
+        n_blocks: int,
+        d_out: int,
+        activation: str = 'SiLU',
+    ) -> 'ResNet':
+
+        return cls(
+            d_in=d_in,
+            d_main=d_main,
+            n_blocks=n_blocks,
+            d_out=d_out,
+            activation=activation,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.float()
+
+        x = self.first_layer(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.head(x)
+
+        return x
+
+
 class MLPDiffusion(nn.Module):
     def __init__(self, d_in, num_classes, is_y_cond, rtdl_params, dim_t=128):
         super().__init__()
@@ -154,7 +236,8 @@ class MLPDiffusion(nn.Module):
         rtdl_params['d_in'] = dim_t
         rtdl_params['d_out'] = d_in
 
-        self.mlp = MLP.make_baseline(**rtdl_params)
+        # self.mlp = MLP.make_baseline(**rtdl_params)
+        self.mlp = ResNet.make_baseline(**rtdl_params)
 
         if self.num_classes > 0 and is_y_cond:
             self.label_emb = nn.Embedding(self.num_classes, dim_t)

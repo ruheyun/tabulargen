@@ -4,7 +4,7 @@ import json
 import torch
 import numpy as np
 import delu
-from tqdm import trange
+from tqdm import trange, tqdm
 import pandas as pd
 from opacus import PrivacyEngine
 from opacus.accountants.utils import get_noise_multiplier
@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
-# from analyze_grad import GradNormAnalyzer
+from mechanism import Accountant
 
 
 class Trainer:
@@ -38,18 +38,14 @@ class Trainer:
         self.epsilon = dp_params['epsilon']
         self.delta = dp_params['delta']
         self.max_grad_norm = dp_params['max_grad_norm']
-        # self.sigma = dp_params['sigma']
-        # self.is_print_grad = False
 
         if self.is_dp:
-
-            noise_multiplier = get_noise_multiplier(
-                target_epsilon=self.epsilon,
-                target_delta=self.delta,
-                sample_rate=1 / len(train_iter),
-                epochs=self.epochs,
-                accountant='prv',
-            )
+            sample_rate = 1 / len(train_iter)
+            accountant = Accountant(sample_rate, self.steps)
+            gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
+            # rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
+            # ma_noise = accountant.ma_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
+            noise_multiplier = gdp_noise
 
             print(f'noise: {noise_multiplier}')
 
@@ -62,17 +58,13 @@ class Trainer:
                 noise_multiplier=noise_multiplier
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
-        # elif self.is_print_grad:
-            # self.analyzer = GradNormAnalyzer(self.diffusion)
-            # self.diffusion = self.analyzer.model
-            # self.diffusion.compute_loss = self.diffusion._module.compute_loss
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
         self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
-        frac_done = step / self.steps
+        frac_done = min(0.999999, step / self.steps)
         lr = self.init_lr * (1 - frac_done)
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
@@ -82,50 +74,42 @@ class Trainer:
         for k in out_dict:
             out_dict[k] = out_dict[k].long().to(self.device)
         self.optimizer.zero_grad(set_to_none=True)
-        loss = self.diffusion.compute_loss(x, out_dict, is_dp=self.is_dp)
+        loss = self.diffusion.compute_loss(x, out_dict)
         loss.backward()
-
-        # self.analyzer.log_stats()
-        # self._gradient_rescaling(out_dict['y'])
 
         self.optimizer.step()
 
-        # self.analyzer.clear_grad_sample()
         return loss
 
     def run_loop(self):
-        curr_loss_gauss = 0.0
-        curr_count = 0
-        with trange(self.steps, unit="step", dynamic_ncols=True) as pbar:
-            step = 0
-            for epoch in range(self.epochs):
-                for x, out_dict in self.train_iter:
-                    out_dict = {'y': out_dict}
-                    batch_loss_gauss = self._run_step(x, out_dict)
+        step = 0
+        pbar = tqdm(iterable=range(self.epochs), position=0, leave=True)
+        for epoch in range(self.epochs):
+            curr_loss_gauss = 0.0
+            curr_count = 0
+            for x, out_dict in self.train_iter:
+                out_dict = {'y': out_dict}
+                batch_loss_gauss = self._run_step(x, out_dict)
 
-                    curr_count += len(x)
-                    curr_loss_gauss += batch_loss_gauss.item() * len(x)
+                curr_count += len(x)
+                curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                    self._anneal_lr(step)
-                    step += 1
-                    # self._anneal_C(step)
+                self._anneal_lr(step)
+                step += 1
 
-                    update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
+                update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 
-                    if (step + 1) % self.log_every == 0:
-                        loss = np.around(curr_loss_gauss / curr_count, 3)
-                        pbar.set_postfix({
-                            'Loss': round(loss, 3),
-                        })
-                        
-                        self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
-                        curr_count = 0
-                        curr_loss_gauss = 0.0
-
-                    pbar.update(1)
+                if (step + 1) % self.log_every == 0:
+                    loss = np.around(curr_loss_gauss / curr_count, 3)
+                    self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
+            
+            # pbar.set_postfix({'Loss': round(loss, 3),})
+            loss = np.around(curr_loss_gauss / curr_count, 3)
+            pbar.set_description(f"Epoch {epoch + 1:04d} | Train Loss: {loss:.3f}")
+            pbar.update(1)
              
         print(
-            f'({self.privacy_engine.get_epsilon(self.dp_params['delta'])}, {self.dp_params['delta']})-DP training done!'
+            f'({self.epsilon}, {self.delta})-DP training done!'
             if self.is_dp else 'No-DP training done!'
         )
 

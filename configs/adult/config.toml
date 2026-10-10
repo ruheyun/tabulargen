@@ -17,13 +17,15 @@ is_y_cond = true
 num_classes = 2
 
 [model.rtdl_params]
-d_layers = [
-    512,
-    1024,
-    1024,
-    512,
-]
-dropout = 0.0
+# d_layers = [
+#     512,
+#     1024,
+#     1024,
+#     512,
+# ]
+# dropout = 0.0
+d_main = 512
+n_blocks = 2
 activation = 'SiLU'
 
 [diffusion]
@@ -52,7 +54,7 @@ mode = "synthetic"
 catboost_params_path = "configs/adult/catboost.json"
 
 [privacy]
-is_dp = true
+is_dp = false
 epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05
