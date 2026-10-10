@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--train', action='store_true', default=False)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
+    parser.add_argument('--eval5', action='store_true', default=False)
     parser.add_argument('--sample_seed', type=int)
 
     args = parser.parse_args()
@@ -105,25 +106,52 @@ def main():
 
         result = {'metrics': metrics, 'per_model': per_model}
 
-
-        # if model in ('catboost', 'all'):
-        #     catboost_params = params.get('catboost', {}) if model == 'all' else params
-        #     if 'catboost_params_path' in settings:
-        #         catboost_params = json.loads(Path(settings['catboost_params_path']).read_text()) | catboost_params
-        #     if not catboost_params:
-        #         raise ValueError('Provide evaluation.catboost_params_path or CatBoost parameters')
-        #     if model == 'all':
-        #         params['catboost'] = catboost_params
-        #     else:
-        #         params = catboost_params
-        # result = evaluate_models(data_path, str(sample_dir), model=model, seed=seed,
-        #                          eval_type=mode, params=params, encoded_path=encoded)
-
         write_json(output / 'results.json', {
             'models': models, 
             'mode': mode,
             'sample_seed': raw_config['sample']['seed'] if mode == 'synthetic' else None,
             'evaluation_seed': seed, 
+            **result,
+        })
+        print(f'Results saved to {output / "results.json"}')
+
+
+    if args.eval5:
+        settings = raw_config['evaluation']
+        models, mode = settings['models'], settings['mode']
+        output = paths.evaluation(5)
+
+        encoded = paths.encoded
+
+        per_model = {}
+        for model in models:
+            if model == 'catboost':
+                catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
+                total_cat = {}
+                for seed in range(0, 5):
+                    result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params)
+                    total_cat.update({f'catboost_{seed}': result['metrics']})
+                metrics = average_metrics(total_cat)
+                per_model.update({'catboost': metrics})
+            else:
+                total_simple = {}
+                for seed in range(0, 5):
+                    result = train_simple(data_path, str(sample_dir), seed=seed, eval_type=mode, params=None, encoded_path=encoded)
+                    total_simple.update({f'simple_{seed}': result['metrics']})
+                metrics = average_metrics(total_simple)
+                per_model.update({'simple': metrics})
+                break
+
+        metrics = average_metrics(per_model)
+        print('Average results')
+        print_metrics(metrics)
+
+        result = {'metrics': metrics, 'per_model': per_model}
+
+        write_json(output / 'results.json', {
+            'models': models, 
+            'mode': mode,
+            'sample_seed': raw_config['sample']['seed'] if mode == 'synthetic' else None,
             **result,
         })
         print(f'Results saved to {output / "results.json"}')

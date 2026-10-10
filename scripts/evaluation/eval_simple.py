@@ -123,11 +123,11 @@ def train_simple(
     #     for split in ['val', 'test']
     # }
 
-    # avg_results = average_metrics(all_results)
+    avg_results = average_metrics(all_results)
     # print('Average results')
     # print_metrics(avg_results)
 
-    return {'metrics': 'avg_results', 'per_model': all_results}
+    return {'metrics': avg_results, 'per_model': all_results}
 
 
 if __name__ == '__main__':
