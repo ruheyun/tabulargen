@@ -45,7 +45,8 @@ class Trainer:
             sample_rate = 1 / len(train_iter)
             accountant = Accountant(sample_rate, self.steps)
             gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
-            # rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=0.5, delta=1e-5)
+            # rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
+            # ma_noise = accountant.ma_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
             noise_multiplier = gdp_noise
 
             self.privacy_engine = PrivacyEngine()
