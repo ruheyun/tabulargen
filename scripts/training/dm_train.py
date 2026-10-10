@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
-from mechanism import Accountant
+from .mechanism import Accountant
 
 
 class Trainer:
