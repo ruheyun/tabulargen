@@ -1,0 +1,53 @@
+seed = 0
+device = "cuda:0"
+
+[data]
+path = "data/beijing"
+
+[experiment]
+path = "exp/beijing/run_10"
+
+[encoding]
+num_encoder = "minmax"
+cat_encoder = "alb"
+seed = 42
+
+[model]
+is_y_cond = false
+num_classes = 0
+
+[model.rtdl_params]
+d_main = 512
+n_blocks = 2
+activation = 'SiLU'
+
+[diffusion]
+num_timesteps = 1000
+gaussian_loss_type = "mse"
+scheduler = "cosine"
+
+[train]
+seed = 0
+num_workers = 2
+epochs = 300
+lr = 1e-4
+weight_decay = 0.0
+batch_size = 256
+
+[sample]
+seed = 4
+class_distribution = "empirical"
+num_samples = 29305
+batch_size = 256
+
+[evaluation]
+seed = 0
+models = ['catboost', 'tree', 'rf', 'lr', 'mlp']
+mode = "synthetic"
+catboost_params_path = "configs/beijing/catboost.json"
+
+[privacy]
+is_dp = false
+epsilon = 10.0
+max_grad_norm = 1.0
+delta = 1e-05

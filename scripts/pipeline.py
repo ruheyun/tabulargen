@@ -4,7 +4,6 @@ import os
 import sys
 import warnings
 from pathlib import Path
-from copy import deepcopy
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from scripts.data.preprocess import data_process
@@ -12,17 +11,10 @@ from scripts.training.dm_train import train
 from scripts.sampling.dm_sample import sample
 from scripts.evaluation.eval_catboost import train_catboost
 from scripts.evaluation.eval_simple import train_simple
-# from scripts.evaluation.evaluation import evaluate_models
-from utils import load_config, dump_json, RunPaths, average_metrics, print_metrics
+from utils import load_config, RunPaths, average_metrics, print_metrics
 
 warnings.filterwarnings('ignore')
 
-
-def save_config(exp_dir, config):
-    os.makedirs(exp_dir, exist_ok=True)
-    filepath = os.path.join(exp_dir, "config.json")
-    with open(filepath, 'w') as f:
-        json.dump(config, f, indent=2)
 
 def write_json(path, value):
     path = Path(path)
