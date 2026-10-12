@@ -4,6 +4,7 @@ import argparse
 import torch
 import math
 import numpy as np
+import pandas as pd
 from scipy.optimize import brentq
 from scipy.special import gammaln, logsumexp
 from scipy.stats import norm
@@ -173,10 +174,21 @@ if __name__ == '__main__':
 
     accountant = Accountant(sample_rate, steps)
 
-    ma_noise = accountant.ma_get_noise_multiplier(epsilon=1, delta=1e-5)
-    rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=1, delta=1e-5)
-    gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=1, delta=1e-5)
-    print(f'ma_noise: {ma_noise}\nrdp_noise: {rdp_noise}\ngdp_noise: {gdp_noise}')
+    ma_noise = []
+    rdp_noise = []
+    gdp_noise = []
+    for eps in range(1, 11):
+        ma_noise.append(accountant.ma_get_noise_multiplier(epsilon=eps, delta=1e-5))
+        rdp_noise.append(accountant.rdp_get_noise_multiplier(epsilon=eps, delta=1e-5))
+        gdp_noise.append(accountant.gdp_get_noise_multiplier(epsilon=eps, delta=1e-5))
+    # print(f'ma_noise: {ma_noise}\nrdp_noise: {rdp_noise}\ngdp_noise: {gdp_noise}')
+    rst = pd.DataFrame({
+        'eps': range(1, 11),
+        'ma': ma_noise,
+        'rdp': rdp_noise,
+        'gdp': gdp_noise,
+    })
+    rst.to_csv('exp/gdp-rdp-ma.csv', index=False, encoding='utf-8-sig')
 
     # raw_config['dp']['sigma'] = noise
 
