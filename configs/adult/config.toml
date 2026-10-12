@@ -22,7 +22,7 @@ n_blocks = 2
 activation = 'SiLU'
 
 [diffusion]
-num_timesteps = 1000
+num_timesteps = 500
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
