@@ -29,7 +29,7 @@ scheduler = "cosine"
 [train]
 seed = 0
 num_workers = 2
-epochs = 300
+epochs = 500
 lr = 1e-4
 weight_decay = 0.0
 batch_size = 256
@@ -37,7 +37,7 @@ batch_size = 256
 [sample]
 seed = 4
 class_distribution = "empirical"
-num_samples = 29305
+num_samples = 27126
 batch_size = 256
 
 [evaluation]
