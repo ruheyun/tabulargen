@@ -33,7 +33,11 @@ def sample(
     with open(os.path.join(encoding_path, 'info.json'), 'r') as f:
         info = json.load(f)  
 
-    assert model_params['d_in'] == info['n_features'], 'model input dimension does not match encoded data'
+    assert (
+        model_params['d_in'] == info['n_features'] + 1 
+        if info['task_type'] == 'regression' 
+        else model_params['d_in'] == info['n_features']
+        ), 'model input dimension does not match encoded data'
 
 
     model = MLPDiffusion(**model_params)
@@ -43,7 +47,7 @@ def sample(
     model.eval()
 
     diffusion = GaussianDiffusion(
-        input_dim=info['n_features'],
+        input_dim=model_params['d_in'],
         denoise_fn=model,
         device=device,
         **diffusion_params

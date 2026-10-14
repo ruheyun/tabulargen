@@ -187,23 +187,33 @@ class TabularDataset(Dataset):
         with open(os.path.join(data_path, 'info.json'), 'r') as f:
             info = json.load(f)     
 
-        if info['task_type'] == 'binclass':
-            label_dtype = torch.float32
-        else:
-            label_dtype = torch.long
-        
-        self.y = torch.tensor(df['label'].values, dtype=label_dtype)
-        self.X = torch.tensor(df.drop(columns=['label']).values, dtype=torch.float32)
-        
-        self.X_dim = self.X.shape[1]
+        self.task_type = info['task_type']
 
-        assert self.X_dim == info['n_features'], ('data dim false!')
+        if self.task_type == 'regression':
+            self.X = torch.tensor(df.values, dtype=torch.float32)
+            self.y = None
+            n_features = info['n_features'] + 1
+        else:
+            if self.task_type == 'binclass':
+                label_dtype = torch.float32
+            else:
+                label_dtype = torch.long
+
+            self.y = torch.tensor(df['label'].values, dtype=label_dtype)
+            self.X = torch.tensor(df.drop(columns=['label']).values, dtype=torch.float32)
+            n_features = info['n_features']
+             
+        self.X_dim = self.X.shape[1]
+        
+        assert self.X_dim == n_features, ('data dim false!')
 
     def __len__(self):
 
         return len(self.X)
     
     def __getitem__(self, idx):
+        if self.y is None:
+            return self.X[idx], None
 
         return self.X[idx], self.y[idx]
 

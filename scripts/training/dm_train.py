@@ -64,7 +64,7 @@ class Trainer:
         self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
-        frac_done = min(0.999999, step / self.steps)
+        frac_done = min(0.99999, step / self.steps)
         lr = self.init_lr * (1 - frac_done)
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
@@ -88,7 +88,10 @@ class Trainer:
             curr_loss_gauss = 0.0
             curr_count = 0
             for x, out_dict in self.train_iter:
-                out_dict = {'y': out_dict}
+                if out_dict is not None:
+                    out_dict = {'y': out_dict}
+                else:
+                    out_dict = {}
                 batch_loss_gauss = self._run_step(x, out_dict)
 
                 curr_count += len(x)
@@ -187,9 +190,6 @@ def train(
     os.makedirs(checkpoint_path, exist_ok=True)
     os.makedirs(log_path, exist_ok=True)
     
-    # torch.save(diffusion._denoise_fn.state_dict(), os.path.join(checkpoint_path, 'model.pt'))
-    # torch.save(ema_model.state_dict(), os.path.join(checkpoint_path, 'model_ema.pt'))
-
     torch.save(
         {
             'model_state_dict': diffusion._denoise_fn.state_dict(),
