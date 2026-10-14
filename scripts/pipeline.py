@@ -85,7 +85,7 @@ def main():
         for model in models:
             if model == 'catboost':
                 catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
-                result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params)
+                result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params, encoded_path=encoded)
                 per_model.update(result['per_model'])
             else:
                 result = train_simple(data_path, str(sample_dir), seed=seed, eval_type=mode, params=None, encoded_path=encoded)
@@ -121,7 +121,7 @@ def main():
                 catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
                 total_cat = {}
                 for seed in range(0, 5):
-                    result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params)
+                    result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params, encoded_path=encoded)
                     total_cat.update({f'catboost_{seed}': result['metrics']})
                 metrics = average_metrics(total_cat)
                 per_model.update({'catboost': metrics})

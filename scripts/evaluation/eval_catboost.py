@@ -4,12 +4,11 @@ import json
 import pandas as pd
 from copy import deepcopy
 from pprint import pprint
-from catboost import CatBoostClassifier
-from sklearn.preprocessing import LabelEncoder
+from catboost import CatBoostClassifier, CatBoostRegressor
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
-from utils import evaluate, print_metrics, get_optimal_threshold_from_pr
+from utils import evaluate, print_metrics, load_wrapper
 
 
 def train_catboost(
@@ -18,6 +17,7 @@ def train_catboost(
     seed=0,
     eval_type='real',
     params=None,
+    encoded_path=None,
 ):
     delu.random.seed(seed)
     data_name = os.path.basename(data_path)
@@ -33,8 +33,9 @@ def train_catboost(
     elif eval_type == 'real':
         print(f'loading real data: {data_path}')
         train_data = pd.read_csv(os.path.join(data_path, f'{data_name}_train.csv'))
+        
     else:
-        raise "Choose eval method"
+        raise ValueError(f'Unknown eval_type: {eval_type}')
 
     val_data = pd.read_csv(os.path.join(data_path, f'{data_name}_val.csv'))
     test_data = pd.read_csv(os.path.join(data_path, f'{data_name}_test.csv'))
@@ -45,15 +46,12 @@ def train_catboost(
         'test': test_data.values[:, :-1],
     }
 
-    le = LabelEncoder()
-    y_train = le.fit_transform(train_data.values[:, -1])
-    y_val = le.transform(val_data.values[:, -1])
-    y_test = le.transform(test_data.values[:, -1])
+    label_wrapper = load_wrapper(encoded_path / 'label_wrapper.pkl')
 
     y = {
-        'train': y_train,
-        'val': y_val,
-        'test': y_test,
+        'train': label_wrapper.transform(train_data.iloc[:, -1].values).values.reshape(-1),
+        'val': label_wrapper.transform(val_data.iloc[:, -1].values).values.reshape(-1),
+        'test': label_wrapper.transform(test_data.iloc[:, -1].values).values.reshape(-1),
     }
 
     print(f'Train size: {X["train"].shape}, Val size: {X["val"].shape}, Test size: {X["test"].shape}')
@@ -69,20 +67,29 @@ def train_catboost(
     pprint(catboost_config, width=100)
     print('-' * 100)
 
-    model = CatBoostClassifier(
-        loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
-        **catboost_config,
-        eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
-        random_seed=seed,
-        class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
-        allow_writing_files=False
-    )
+    if info['task_type'] == 'regression':
+        model = CatBoostRegressor(
+            **catboost_config,
+            eval_metric='RMSE',
+            random_seed=seed,
+            allow_writing_files=False
+        )
+        predict = model.predict
 
-    predict = (
-        model.predict_proba
-        if info['task_type'] == 'multiclass'
-        else lambda x: model.predict_proba(x)[:, 1]
-    )
+    else:
+        model = CatBoostClassifier(
+            loss_function="MultiClass" if info['task_type'] == 'multiclass' else "Logloss",
+            **catboost_config,
+            eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
+            random_seed=seed,
+            class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
+            allow_writing_files=False
+        )
+        predict = (
+            model.predict_proba
+            if info['task_type'] == 'multiclass'
+            else lambda x: model.predict_proba(x)[:, 1]
+        )
 
     model.fit(X['train'], y['train'], eval_set=(X['val'], y['val']), verbose=100)
 
@@ -91,8 +98,6 @@ def train_catboost(
         for k, v in X.items()
     }
 
-    # threshold = get_optimal_threshold_from_pr(y['val'], predictions['val'])
-
     results = {
         k: evaluate(y[k], predictions[k], info['task_type'])
         for k in predictions
@@ -100,27 +105,4 @@ def train_catboost(
 
     print_metrics(results)
 
-    # if exp_path is not None:
-    #     os.makedirs(exp_path, exist_ok=True)
-    #     with open(os.path.join(exp_path, 'results_catboost.json'), 'w') as f:
-    #         json.dump(results, f)
-
     return {'metrics': results, 'per_model': {'catboost': results}}
-
-
-if __name__ == '__main__':
-    data_name = 'bank'
-
-    data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'tvae')
-
-    sum_f1, sum_acc, sum_roc = 0, 0, 0
-    for i in range(5):
-        res = train_catboost(data_path, exp_path, seed=i, eval_type='synthetic')
-        sum_f1 += res['test']['f1']
-        sum_acc += res['test']['accuracy']
-        sum_roc += res['test']['roc_auc']
-
-    print(
-        f'avg_f1: {sum_f1 / 5: .4f}, avg_acc: {sum_acc / 5: .4f}, avg_roc: {sum_roc / 5: .4f}'
-    )

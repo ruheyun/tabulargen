@@ -12,7 +12,7 @@ from inspect import isfunction
 from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, balanced_accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, mean_squared_error, r2_score, mean_absolute_error
 from sklearn.metrics import precision_recall_curve
 from opacus.grad_sample import GradSampleModule
 from dataclasses import dataclass
@@ -224,8 +224,6 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         acc = accuracy_score(y_true, y_label)
         auc = roc_auc_score(y_true, y_prob)
 
-        # balanced_acc = balanced_accuracy_score(y_true, y_label)
-
     elif task_type == 'multiclass':
         y_prob = y_pred                      
         y_label = np.argmax(y_prob, axis=1)
@@ -233,6 +231,13 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
         f1 = f1_score(y_true, y_label, average='macro')
         acc = accuracy_score(y_true, y_label)
         auc = roc_auc_score(y_true, y_prob, multi_class='ovr')
+
+    elif task_type == 'regression':
+        return {
+            'rmse': float(np.sqrt(mean_squared_error(y_true, y_pred))),
+            'mae': float(mean_absolute_error(y_true, y_pred)),
+            'r2': float(r2_score(y_true, y_pred)),
+        }
     else:
         raise 'Task type is error!'
 
@@ -272,7 +277,7 @@ def average_metrics(per_model):
     return {
         split: {
             metric: sum(result[split][metric] for result in per_model.values()) / len(per_model)
-            for metric in ['f1', 'accuracy', 'roc_auc']
+            for metric in next(iter(per_model.values()))[split]
         }
         for split in ['train', 'val', 'test']
     }

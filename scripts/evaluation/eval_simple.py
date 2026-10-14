@@ -1,14 +1,11 @@
 import os
 import delu
 import json
-import pickle
 import pandas as pd
-from pprint import pprint
-from sklearn.neural_network import MLPClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.linear_model import LogisticRegression, Ridge
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
@@ -32,12 +29,6 @@ def train_simple(
     if eval_type == 'synthetic':
         print(f'loading synthetic data: {exp_path}')
         train_data = pd.read_csv(os.path.join(exp_path, 'reverse.csv'))
-
-        # with open(os.path.join(exp_path, 'data_wrapper.pkl'), 'rb') as f:
-        #     data_wrapper = pickle.load(f)
-
-        # with open(os.path.join(exp_path, 'label_wrapper.pkl'), 'rb') as f:
-        #     label_wrapper = pickle.load(f)
 
         data_wrapper = load_wrapper(encoded_path / 'data_wrapper.pkl')
 
@@ -103,46 +94,11 @@ def train_simple(
             for k in predictions
         }
 
-        # all_results.append(results)
-
         all_results[model_name] = results
 
         print_metrics(results)
         print()
 
-        # if exp_path is not None:
-        #     os.makedirs(exp_path, exist_ok=True)
-        #     with open(os.path.join(exp_path, f'results_{model_name}.json'), 'w') as f:
-        #         json.dump(results, f)
-    
-    # avg_results = {
-    #     split: {
-    #         metric: round(sum(res[split][metric] for res in all_results) / 4, 4)
-    #         for metric in ['f1', 'accuracy', 'roc_auc']
-    #     }
-    #     for split in ['val', 'test']
-    # }
-
     avg_results = average_metrics(all_results)
-    # print('Average results')
-    # print_metrics(avg_results)
 
     return {'metrics': avg_results, 'per_model': all_results}
-
-
-if __name__ == '__main__':
-    data_name = 'bank'
-
-    data_path = os.path.join('data', data_name)
-    exp_path = os.path.join('exp', data_name, 'tvae')
-
-    sum_f1, sum_acc, sum_roc = 0, 0, 0
-    for i in range(5):
-        res = train_simple(data_path, exp_path, seed=i, eval_type='synthetic')
-        sum_f1 += res['test']['f1']
-        sum_acc += res['test']['accuracy']
-        sum_roc += res['test']['roc_auc']
-
-    print(
-        f'avg_f1: {sum_f1 / 5: .4f}, avg_acc: {sum_acc / 5: .4f}, avg_roc: {sum_roc / 5: .4f}'
-    )
