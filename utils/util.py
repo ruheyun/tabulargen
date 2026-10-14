@@ -191,7 +191,7 @@ class TabularDataset(Dataset):
 
         if self.task_type == 'regression':
             self.X = torch.tensor(df.values, dtype=torch.float32)
-            self.y = None
+            self.y = torch.zeros(len(df), dtype=torch.long)
             n_features = info['n_features'] + 1
         else:
             if self.task_type == 'binclass':
@@ -212,9 +212,6 @@ class TabularDataset(Dataset):
         return len(self.X)
     
     def __getitem__(self, idx):
-        if self.y is None:
-            return self.X[idx], None
-
         return self.X[idx], self.y[idx]
 
 

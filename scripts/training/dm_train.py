@@ -88,10 +88,10 @@ class Trainer:
             curr_loss_gauss = 0.0
             curr_count = 0
             for x, out_dict in self.train_iter:
-                if out_dict is not None:
-                    out_dict = {'y': out_dict}
-                else:
+                if self.info['task_type'] == 'regression':
                     out_dict = {}
+                else:
+                    out_dict = {'y': out_dict}
                 batch_loss_gauss = self._run_step(x, out_dict)
 
                 curr_count += len(x)
