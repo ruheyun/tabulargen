@@ -70,8 +70,8 @@ def train_simple(
         models = {
             "tree": DecisionTreeRegressor(max_depth=8, random_state=seed),
             "rf": RandomForestRegressor(max_depth=15, random_state=seed),
-            "lr": Ridge(max_iter=1000, random_state=seed),
-            "mlp": MLPRegressor(max_iter=1000, random_state=seed)
+            "lr": Ridge(max_iter=500, random_state=seed),
+            "mlp": MLPRegressor(max_iter=500, random_state=seed)
         }
     else:
         models = {

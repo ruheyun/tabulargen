@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/adult"
 
 [experiment]
-path = "exp/adult/run_10"
+path = "exp/adult/run_00"
 
 [encoding]
 num_encoder = "minmax"

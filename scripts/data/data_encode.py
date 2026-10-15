@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, QuantileTransformer, MinMaxScaler, LabelEncoder
+from scipy.spatial.distance import cdist
 
 
 class DataWrapper:
-    def __init__(self, num_encoder="quantile", cat_encoder='alb', seed=42):
+    def __init__(self, num_encoder="quantile", cat_encoder='alb', seed=42, cat_emb_dim=2):
         self.num_encoder = num_encoder
         self.cat_encoder = cat_encoder
         self.seed = seed
@@ -16,8 +17,12 @@ class DataWrapper:
         self.columns = []
         self.col_dim = []
         self.col_dtype = {}
+        self.cat_emb_dim = cat_emb_dim
+        self.cat_embeddings = {}
 
     def fit(self, dataframe, num_features):
+        rng = np.random.default_rng(self.seed)
+
         self.raw_dim = dataframe.shape[1]
         self.raw_columns = dataframe.columns
 
@@ -52,6 +57,12 @@ class DataWrapper:
                 dim = max(1, int(np.ceil(np.log2(len(distinct_values)))))
             elif self.cat_encoder == 'oht':
                 dim = len(distinct_values)
+            elif self.cat_encoder == 'psk':
+                dim = 2
+            elif self.cat_encoder == 'embedding':
+                n_categories = len(distinct_values)
+                dim = self.cat_emb_dim
+                self.cat_embeddings[col] = rng.standard_normal((n_categories, dim)).astype(np.float32)
             else:
                 raise ValueError(f"Unknown cat encoder: {self.cat_encoder}")
             self.col_dim.append(dim)
@@ -69,6 +80,11 @@ class DataWrapper:
                     onehot = np.zeros((len(col_data), self.col_dim[i]))
                     onehot[np.arange(len(col_data)), col_data] = 1
                     col_data = onehot  
+                elif self.cat_encoder == 'psk':
+                    phases = col_data * (2 * np.pi / len(self.all_distinct_values[col]))
+                    col_data = np.column_stack((np.sin(phases), np.cos(phases)))
+                elif self.cat_encoder == 'embedding':
+                    col_data = self.cat_embeddings[col][col_data]
                 norm_data.append(col_data)
             elif col in self.num_normalizer.keys():
                 norm_data.append(self.num_normalizer[col].transform(col_data.reshape(-1, 1)).reshape(-1, 1))
@@ -126,6 +142,21 @@ class DataWrapper:
                     col_data = self.BitsToVals(col_data)
                 elif self.cat_encoder == 'oht':
                     col_data = np.argmax(col_data, axis=1)
+                elif self.cat_encoder == 'psk':
+                    n_categories = len(self.all_distinct_values[col])
+                    phases = np.mod(np.arctan2(col_data[:, 0], col_data[:, 1]), 2 * np.pi)
+                    col_data = np.rint(phases / (2 * np.pi / n_categories)).astype(np.int64)
+                    col_data %= n_categories
+                elif self.cat_encoder == 'embedding':
+                    embeddings = self.cat_embeddings[col]
+                    decoded = np.empty(len(col_data), dtype=np.int64)
+
+                    batch_size = 1024
+                    for start in range(0, len(col_data), batch_size):
+                        end = min(start + batch_size, len(col_data))
+                        distances = cdist(col_data[start:end], embeddings, metric='euclidean')
+                        decoded[start:end] = distances.argmin(axis=1)
+                    col_data = decoded
 
                 col_data = col_data.astype(np.int32)
             else:
@@ -202,4 +233,3 @@ class LabelWrapper:
 
         elif self.task == 'regression':
             return self.encoder.inverse_transform(y.reshape(-1, 1)).reshape(-1)
-        
