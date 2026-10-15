@@ -82,15 +82,27 @@ def main():
         encoded = paths.encoded
 
         per_model = {}
-        for model in models:
-            if model == 'catboost':
-                catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
-                result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params, encoded_path=encoded)
-                per_model.update(result['per_model'])
-            else:
-                result = train_simple(data_path, str(sample_dir), seed=seed, eval_type=mode, params=None, encoded_path=encoded)
-                per_model.update(result['per_model'])
-                break
+        if 'catboost' in models:
+            catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
+            result = train_catboost(
+                data_path, str(sample_dir),
+                seed=seed,
+                eval_type=mode,
+                params=catboost_params,
+                encoded_path=encoded,
+            )
+            per_model.update(result['per_model'])
+
+        simple_models = [name for name in models if name != 'catboost']
+        if simple_models:
+            result = train_simple(
+                data_path, str(sample_dir),
+                seed=seed,
+                eval_type=mode,
+                encoded_path=encoded,
+                model_names=simple_models,
+            )
+            per_model.update(result['per_model'])
 
         metrics = average_metrics(per_model)
         print('Average results')
@@ -115,26 +127,56 @@ def main():
 
         encoded = paths.encoded
 
-        per_model = {}
-        for model in models:
-            if model == 'catboost':
-                catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
-                total_cat = {}
-                for seed in range(0, 5):
-                    result = train_catboost(data_path, str(sample_dir), seed=seed, eval_type=mode, params=catboost_params, encoded_path=encoded)
-                    total_cat.update({f'catboost_{seed}': result['metrics']})
-                metrics = average_metrics(total_cat)
-                per_model.update({'catboost': metrics})
-            else:
-                total_simple = {}
-                for seed in range(0, 5):
-                    result = train_simple(data_path, str(sample_dir), seed=seed, eval_type=mode, params=None, encoded_path=encoded)
-                    total_simple.update({f'simple_{seed}': result['metrics']})
-                metrics = average_metrics(total_simple)
-                per_model.update({'simple': metrics})
-                break
+        per_seed = {}
 
-        metrics = average_metrics(per_model)
+        for seed in range(5):
+            seed_results = {}
+
+            if 'catboost' in models:
+                catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
+                result = train_catboost(
+                    data_path, str(sample_dir),
+                    seed=seed,
+                    eval_type=mode,
+                    params=catboost_params,
+                    encoded_path=encoded,
+                )
+                seed_results.update(result['per_model'])
+
+            simple_models = [name for name in models if name != 'catboost']
+            if simple_models:
+                result = train_simple(
+                    data_path, str(sample_dir),
+                    seed=seed,
+                    eval_type=mode,
+                    encoded_path=encoded,
+                    model_names=simple_models,
+                )
+                seed_results.update(result['per_model'])
+
+            per_seed[seed] = seed_results
+
+        per_model = {
+            name: average_metrics({
+                seed: results[name]
+                for seed, results in per_seed.items()
+            })
+            for name in models
+        }
+
+        groups = {}
+        if 'catboost' in per_model:
+            groups['catboost'] = per_model['catboost']
+
+        simple_results = {
+            name: result
+            for name, result in per_model.items()
+            if name != 'catboost'
+        }
+        if simple_results:
+            groups['simple'] = average_metrics(simple_results)
+
+        metrics = average_metrics(groups)
         print('Average results')
         print_metrics(metrics)
 

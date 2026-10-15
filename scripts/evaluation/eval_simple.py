@@ -18,7 +18,8 @@ def train_simple(
     seed=0,
     eval_type='real',
     params=None,
-    encoded_path=None
+    encoded_path=None,
+    model_names=None,
 ):
     delu.random.seed(seed)
 
@@ -31,7 +32,6 @@ def train_simple(
         train_data = pd.read_csv(os.path.join(exp_path, 'reverse.csv'))
 
         data_wrapper = load_wrapper(encoded_path / 'data_wrapper.pkl')
-
         label_wrapper = load_wrapper(encoded_path / 'label_wrapper.pkl')
 
         label_data = label_wrapper.transform(train_data.iloc[:, -1].values)
@@ -43,8 +43,9 @@ def train_simple(
 
         label_data = train_data.iloc[:, -1]
         train_data = train_data.iloc[:, :-1]
+
     else:
-        raise "Choose eval method"
+        raise ValueError(f'Unknown eval_type: {eval_type}')
 
     val_data = pd.read_csv(os.path.join(encoded_path, 'val.csv'))
     test_data = pd.read_csv(os.path.join(encoded_path, 'test.csv'))
@@ -65,19 +66,34 @@ def train_simple(
 
     print('-' * 100)
 
-    models = {
+    if info['task_type'] == 'regression':
+        models = {
+            "tree": DecisionTreeRegressor(max_depth=8, random_state=seed),
+            "rf": RandomForestRegressor(max_depth=15, random_state=seed),
+            "lr": Ridge(max_iter=1000, random_state=seed),
+            "mlp": MLPRegressor(max_iter=1000, random_state=seed)
+        }
+    else:
+        models = {
             "tree": DecisionTreeClassifier(max_depth=8, min_samples_leaf=10, random_state=seed),
             "rf": RandomForestClassifier(max_depth=15, min_samples_leaf=5, random_state=seed, n_jobs=-1),
             "lr": LogisticRegression(max_iter=1000, n_jobs=-1, random_state=seed),
             "mlp": MLPClassifier(max_iter=1000, random_state=seed, early_stopping=True, validation_fraction=0.1, n_iter_no_change=16),
         }
-    
+
+    if model_names is not None:
+        unknown = set(model_names) - set(models)
+        if unknown:
+            raise ValueError(f'Unknown models: {sorted(unknown)}')
+        models = {name: models[name] for name in model_names}
     all_results = {}
     for model_name, model in models.items():
         print(model.__class__.__name__)
 
         predict = (
-            model.predict_proba
+            model.predict
+            if info['task_type'] == 'regression'
+            else model.predict_proba
             if info['task_type'] == 'multiclass'
             else lambda x: model.predict_proba(x)[:, 1]
         )
