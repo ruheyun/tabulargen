@@ -37,7 +37,7 @@ batch_size = 256
 [sample]
 seed = 4
 class_distribution = "empirical"
-num_samples = 29305
+num_samples = 12967
 batch_size = 256
 
 [evaluation]
