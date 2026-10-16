@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/house"
 
 [experiment]
-path = "exp/house/run_10"
+path = "exp/house/run_00"
 
 [encoding]
 num_encoder = "minmax"
@@ -37,7 +37,7 @@ batch_size = 256
 [sample]
 seed = 4
 class_distribution = "empirical"
-num_samples = 29305
+num_samples = 14581
 batch_size = 256
 
 [evaluation]
