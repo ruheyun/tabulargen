@@ -9,7 +9,7 @@ path = "exp/house/run_00"
 
 [encoding]
 num_encoder = "minmax"
-cat_encoder = "embedding"
+cat_encoder = "psk"
 seed = 42
 
 [model]
@@ -29,10 +29,10 @@ scheduler = "cosine"
 [train]
 seed = 0
 num_workers = 2
-epochs = 500
+epochs = 300
 lr = 1e-4
 weight_decay = 0.0
-batch_size = 128
+batch_size = 256
 
 [sample]
 seed = 4
