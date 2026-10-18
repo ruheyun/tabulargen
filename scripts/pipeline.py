@@ -9,8 +9,7 @@ sys.path.append(ROOT)
 from scripts.data.preprocess import data_process
 from scripts.training.dm_train import train
 from scripts.sampling.dm_sample import sample
-from scripts.evaluation.eval_catboost import train_catboost
-from scripts.evaluation.eval_simple import train_simple
+from scripts.evaluation.eval_tstr import train_tstr
 from utils import load_config, RunPaths, average_metrics, print_metrics
 
 warnings.filterwarnings('ignore')
@@ -79,30 +78,17 @@ def main():
         models, mode, seed = settings['models'], settings['mode'], settings['seed']
         output = paths.evaluation(seed)
 
-        encoded = paths.encoded
-
         per_model = {}
-        if 'catboost' in models:
-            catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
-            result = train_catboost(
-                data_path, str(sample_dir),
-                seed=seed,
-                eval_type=mode,
-                params=catboost_params,
-                encoded_path=encoded,
-            )
-            per_model.update(result['per_model'])
 
-        simple_models = [name for name in models if name != 'catboost']
-        if simple_models:
-            result = train_simple(
-                data_path, str(sample_dir),
-                seed=seed,
-                eval_type=mode,
-                encoded_path=encoded,
-                model_names=simple_models,
-            )
-            per_model.update(result['per_model'])
+        result = train_tstr(
+            data_path,
+            str(sample_dir),
+            seed=seed,
+            eval_type=mode,
+            params_path=settings.get('catboost_params_path'),
+            model_names=models,
+        )
+        per_model.update(result['per_model'])
 
         metrics = average_metrics(per_model)
         print('Average results')
@@ -125,36 +111,21 @@ def main():
         models, mode = settings['models'], settings['mode']
         output = paths.evaluation(5)
 
-        encoded = paths.encoded
-
         per_seed = {}
 
         for seed in range(5):
             seed_results = {}
 
-            if 'catboost' in models:
-                catboost_params = json.loads(Path(settings['catboost_params_path']).read_text())
-                result = train_catboost(
-                    data_path, str(sample_dir),
-                    seed=seed,
-                    eval_type=mode,
-                    params=catboost_params,
-                    encoded_path=encoded,
-                )
-                seed_results.update(result['per_model'])
+            seed_results = train_tstr(
+                data_path,
+                str(sample_dir),
+                seed=seed,
+                eval_type=mode,
+                params_path=settings.get('catboost_params_path'),
+                model_names=models,
+            )
 
-            simple_models = [name for name in models if name != 'catboost']
-            if simple_models:
-                result = train_simple(
-                    data_path, str(sample_dir),
-                    seed=seed,
-                    eval_type=mode,
-                    encoded_path=encoded,
-                    model_names=simple_models,
-                )
-                seed_results.update(result['per_model'])
-
-            per_seed[seed] = seed_results
+            per_seed[seed] = seed_results['per_model']
 
         per_model = {
             name: average_metrics({

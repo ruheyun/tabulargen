@@ -77,8 +77,9 @@ class DataWrapper:
                 if self.cat_encoder == 'alb':
                     col_data = self.ValsToBit(col_data.reshape(-1, 1), self.col_dim[i])
                 elif self.cat_encoder == 'oht':
-                    onehot = np.zeros((len(col_data), self.col_dim[i]))
-                    onehot[np.arange(len(col_data)), col_data] = 1
+                    onehot = np.zeros((len(col_data), self.col_dim[i]), dtype=np.float32)
+                    known = col_data >= 0
+                    onehot[np.flatnonzero(known), col_data[known]] = 1
                     col_data = onehot  
                 elif self.cat_encoder == 'psk':
                     phases = col_data * (2 * np.pi / len(self.all_distinct_values[col]))

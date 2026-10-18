@@ -4,7 +4,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from utils import average_metrics, print_metrics
 from eval_catboost import train_catboost
-from eval_simple import train_simple
+from scripts.evaluation.eval_tstr import train_simple
 
 def evaluate_models(
     data_path, 

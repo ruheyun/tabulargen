@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/adult"
 
 [experiment]
-path = "exp/adult/run_10"
+path = "exp/adult/run_00"
 
 [encoding]
 num_encoder = "minmax"
@@ -35,7 +35,7 @@ weight_decay = 0.0
 batch_size = 256
 
 [sample]
-seed = 4
+seed = 0
 class_distribution = "empirical"
 num_samples = 29305
 batch_size = 256
