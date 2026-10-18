@@ -25,7 +25,7 @@ def data_process(data_path, exp_path, num_encoder='quantile', cat_encoder='alb',
     X_val_encoding = train_wrapper.transform(df_val.iloc[:, :-1])
     X_test_encoding = train_wrapper.transform(df_test.iloc[:, :-1])
 
-    label_wrapper = LabelWrapper(task=info['task_type'])
+    label_wrapper = LabelWrapper(task=info['task_type'], num_encoder=num_encoder)
     label_wrapper.fit(df_train.iloc[:, -1].values)
 
     y_train_encoding = label_wrapper.transform(df_train.iloc[:, -1].values)

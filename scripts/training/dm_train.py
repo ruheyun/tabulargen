@@ -7,8 +7,8 @@ import delu
 from tqdm import trange, tqdm
 import pandas as pd
 from opacus import PrivacyEngine
-from opacus.accountants.utils import get_noise_multiplier
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from pathlib import Path
 import os
 import sys
@@ -58,13 +58,19 @@ class Trainer:
                 noise_multiplier=noise_multiplier
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
+
+        self.scheduler = CosineAnnealingLR(
+            self.optimizer,
+            T_max=self.steps,
+            eta_min=self.init_lr * 0.01,
+        )
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
         self.optimizer.max_grad_norm = C
 
     def _anneal_lr(self, step):
-        frac_done = min(0.99999, step / self.steps)
+        frac_done = min(0.99, step / self.steps)
         lr = self.init_lr * (1 - frac_done)
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
@@ -97,7 +103,8 @@ class Trainer:
                 curr_count += len(x)
                 curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                self._anneal_lr(step)
+                # self._anneal_lr(step)
+                self.scheduler.step()
                 step += 1
 
                 update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())

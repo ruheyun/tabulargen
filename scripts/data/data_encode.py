@@ -199,8 +199,9 @@ class DataWrapper:
 
 
 class LabelWrapper:
-    def __init__(self, task='binclass'):
+    def __init__(self, task='binclass', num_encoder='standard'):
         self.task = task
+        self.num_encoder = num_encoder
         self.encoder = None
 
     def fit(self, y):
@@ -211,7 +212,12 @@ class LabelWrapper:
             self.encoder.fit(y)
 
         elif self.task == 'regression':
-            self.encoder = StandardScaler()
+            if self.num_encoder == 'standard':
+                self.encoder = StandardScaler()
+            elif self.num_encoder == 'minmax':
+                self.encoder = MinMaxScaler(feature_range=(-1, 1))
+            else:
+                raise ValueError(f'Unknown label encoder: {self.num_encoder}')     
             self.encoder.fit(y.reshape(-1, 1))
 
         else:

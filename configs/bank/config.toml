@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/bank"
 
 [experiment]
-path = "exp/bank/run_10"
+path = "exp/bank/run_00"
 
 [encoding]
 num_encoder = "minmax"

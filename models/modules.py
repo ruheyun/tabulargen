@@ -255,7 +255,7 @@ class MLPDiffusion(nn.Module):
         emb = self.time_embed(timestep_embedding(timesteps, self.dim_t))
         if self.is_y_cond and y is not None:
             if self.num_classes > 0:
-                y = y.squeeze()
+                y = y.reshape(-1)
             else:
                 y = y.resize(y.size(0), 1).float()
             emb = emb + F.silu(self.label_emb(y))
