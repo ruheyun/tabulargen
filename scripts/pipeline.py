@@ -10,6 +10,7 @@ from scripts.data.preprocess import data_process
 from scripts.training.dm_train import train
 from scripts.sampling.dm_sample import sample
 from scripts.evaluation.eval_tstr import train_tstr
+from scripts.evaluation.eval_metrics import column_quality
 from utils import load_config, RunPaths, average_metrics, print_metrics
 
 warnings.filterwarnings('ignore')
@@ -153,11 +154,16 @@ def main():
 
         result = {'metrics': metrics, 'per_model': per_model}
 
+        quality_report = None
+        if mode == 'synthetic':
+            quality_report = column_quality(data_path, str(sample_dir))
+
         write_json(output / 'results.json', {
             'models': models, 
             'mode': mode,
             'sample_seed': raw_config['sample']['seed'] if mode == 'synthetic' else None,
             **result,
+            'quality': quality_report
         })
         print(f'Results saved to {output / "results.json"}')
 

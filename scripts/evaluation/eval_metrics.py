@@ -24,6 +24,15 @@ def get_metadata(data, data_name):
 
     return metadata
 
+def column_quality(data_path, exp_path):   
+    info = load_json(os.path.join(data_path, 'info.json'))
+    real_data = pd.read_csv(os.path.join(data_path, f'{info['name']}_train.csv'))
+    synt_data = pd.read_csv(os.path.join(exp_path, 'reverse.csv'))
+    metadata = load_json(os.path.join(data_path, 'metadata.json'))
+
+
+    return column_shape(real_data, synt_data, metadata)
+
 
 def column_shape(real_data, synthetic_data, metadata):
     """
@@ -33,7 +42,18 @@ def column_shape(real_data, synthetic_data, metadata):
     report = QualityReport()
     report.generate(real_data, synthetic_data, metadata=metadata, verbose=False)
 
-    print(report.get_properties())
+    properties = report.get_properties()
+
+    print(properties)
+
+    return {
+        row['Property']: (
+            None if pd.isna(row['Score'])
+            else float(row['Score'])
+        )
+        for _, row in properties.iterrows()
+    }
+
     # print('===============================================')
 
     # print(report.get_score())
