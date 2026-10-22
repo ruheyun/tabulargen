@@ -87,6 +87,36 @@ class Trainer:
 
         return loss
 
+    def _run_step_ts(self, x, out_dict):
+        x = x.to(self.device)
+        for k in out_dict:
+            out_dict[k] = out_dict[k].long().to(self.device)
+
+        def compute_grad_norm(model, loss):
+            grads = torch.autograd.grad(loss, model.parameters(), retain_graph=True)
+            total = 0
+            for g in grads:
+                total += (g ** 2).sum()
+            return total.sqrt()
+
+        grad_norms = []
+        t_list = torch.arange(0, 1000, 10, device=self.device)
+        for t in t_list:
+            self.optimizer.zero_grad(set_to_none=True)
+            loss = self.diffusion.compute_loss(x, out_dict, t)
+            # loss.backward()
+            grad_norm = compute_grad_norm(self.diffusion._denoise_fn, loss)
+            grad_norms.append(grad_norm.item())
+        # print(grad_norms)
+        df = pd.DataFrame(
+            {
+                'time_steps': t_list.cpu().numpy(),
+                'grad_norm': grad_norms
+            },
+        )
+        df.to_csv('grad_norms.csv', index=False)
+        return grad_norm
+
     def run_loop(self):
         step = 0
         pbar = tqdm(iterable=range(self.epochs), position=0, leave=True)
@@ -98,7 +128,13 @@ class Trainer:
                     out_dict = {}
                 else:
                     out_dict = {'y': out_dict}
-                batch_loss_gauss = self._run_step(x, out_dict)
+
+                if epoch == 2:
+                    batch_loss_gauss = self._run_step_ts(x, out_dict)
+                    break
+                else:
+                    batch_loss_gauss = self._run_step(x, out_dict)
+
 
                 curr_count += len(x)
                 curr_loss_gauss += batch_loss_gauss.item() * len(x)
