@@ -110,7 +110,8 @@ def train_tstr(
                 eval_metric = 'AUC' if info['task_type'] != 'multiclass' else 'TotalF1',
                 random_seed=seed,
                 class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
-                allow_writing_files=False
+                allow_writing_files=False,
+                verbose=0
             ),
             "tree": DecisionTreeClassifier(max_depth=8, min_samples_leaf=10, random_state=seed),
             "rf": RandomForestClassifier(max_depth=15, min_samples_leaf=5, random_state=seed, n_jobs=-1),
