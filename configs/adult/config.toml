@@ -22,14 +22,14 @@ n_blocks = 2
 activation = 'SiLU'
 
 [diffusion]
-num_timesteps = 1000
+num_timesteps = 500
 gaussian_loss_type = "mse"
 scheduler = "linear"
 
 [train]
 seed = 0
 num_workers = 2
-epochs = 500
+epochs = 300
 lr = 1e-4
 weight_decay = 0.0
 batch_size = 256
