@@ -90,7 +90,7 @@ def objective(trial, base_config, exps_path, eval_model, num_seeds, metric):
         report = load_json(report_path)
         if report['sample_seed'] != sample_seed:
             raise ValueError(f'Unexpected sample seed in {report_path}')
-        score = float(report['per_model'][eval_model]['val'][metric])
+        score = float(report['metrics']['val'][metric])
         if not math.isfinite(score):
             raise ValueError(f'Non-finite validation {metric} in {report_path}')
         scores.append(score)
