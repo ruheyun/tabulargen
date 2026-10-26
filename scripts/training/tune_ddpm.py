@@ -65,7 +65,7 @@ def run_pipeline(config_path, *flags):
     )
 
 
-def objective(trial, base_config, exps_path, eval_model, num_seeds, metric):
+def objective(trial, base_config, exps_path, num_seeds, metric):
 
     config = deepcopy(base_config)
     config['diffusion']['num_timesteps'] = trial.suggest_categorical('num_timesteps', SEARCH_SPACE['num_timesteps'])
@@ -101,7 +101,6 @@ def objective(trial, base_config, exps_path, eval_model, num_seeds, metric):
 
     mean_score = sum(scores) / len(scores)
     (exp_dir / 'scores.json').write_text(json.dumps({
-        'eval_model': eval_model,
         'metric': metric,
         'sample_seeds': list(range(num_seeds)),
         'val_scores': scores,
@@ -143,7 +142,7 @@ def main():
         direction='maximize',
     )
     study.optimize(
-        lambda trial: objective(trial, base_config, exps_path, args.eval_model, args.num_seeds, metric),
+        lambda trial: objective(trial, base_config, exps_path, args.num_seeds, metric),
         n_trials=args.num_trials, show_progress_bar=True,
     )
 
