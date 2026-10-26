@@ -6,15 +6,18 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import optuna
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-ARCHITECTURES = {
-    'small': [128, 128],
-    'medium': [256, 256],
-    'current': [128, 256, 256, 128],
-    'large': [256, 512, 512, 256],
+from utils import load_config, dump_config, load_json
+
+
+SEARCH_SPACE = {
+    'num_timesteps': [500, 1000],
+    'scheduler': ['linear', 'cosine'],
+    'epochs': [300, 500]
 }
 
 
@@ -62,15 +65,12 @@ def run_pipeline(config_path, *flags):
     )
 
 
-def objective(trial, base_config, exps_path, eval_model, num_seeds):
-    from utils import dump_config, load_json
+def objective(trial, base_config, exps_path, eval_model, num_seeds, metric):
 
     config = deepcopy(base_config)
-    config['train']['lr'] = trial.suggest_float('lr', 1e-5, 0.003, log=True)
-    config['train']['batch_size'] = trial.suggest_categorical('batch_size', [128, 256, 512])
-    architecture = trial.suggest_categorical('architecture', list(ARCHITECTURES))
-    config['model']['rtdl_params']['d_layers'] = ARCHITECTURES[architecture].copy()
-    config['diffusion']['num_timesteps'] = trial.suggest_categorical('num_timesteps', [500, 1000])
+    config['diffusion']['num_timesteps'] = trial.suggest_categorical('num_timesteps', SEARCH_SPACE['num_timesteps'])
+    config['diffusion']['scheduler'] = trial.suggest_categorical('scheduler', SEARCH_SPACE['scheduler'])
+    config['train']['epochs'] = trial.suggest_categorical('epochs', SEARCH_SPACE['epochs'])
     exp_dir = exps_path / str(trial.number)
     exp_dir.mkdir()
     config['experiment']['path'] = str(exp_dir)
@@ -83,18 +83,17 @@ def objective(trial, base_config, exps_path, eval_model, num_seeds):
     scores = []
     report_path = (
         exp_dir / 'evaluation'
-        / f"seed_{config['evaluation']['seed']}" / 'results.json'
+        / f"seed_5" / 'results.json'
     )
     for sample_seed in range(num_seeds):
-        run_pipeline(config_path, '--sample', '--eval', '--sample_seed', str(sample_seed))
+        run_pipeline(config_path, '--sample', '--eval5', '--sample_seed', str(sample_seed))
         report = load_json(report_path)
         if report['sample_seed'] != sample_seed:
             raise ValueError(f'Unexpected sample seed in {report_path}')
-        score = float(report['per_model'][eval_model]['val']['roc_auc'])
+        score = float(report['per_model'][eval_model]['val'][metric])
         if not math.isfinite(score):
-            raise ValueError(f'Non-finite validation ROC-AUC in {report_path}')
+            raise ValueError(f'Non-finite validation {metric} in {report_path}')
         scores.append(score)
-        # The pipeline reuses the evaluation-seed directory for every sample seed.
         (exp_dir / f'results_sample_seed_{sample_seed}.json').write_text(
             json.dumps(report, indent=2, allow_nan=False) + '\n'
         )
@@ -103,40 +102,34 @@ def objective(trial, base_config, exps_path, eval_model, num_seeds):
     mean_score = sum(scores) / len(scores)
     (exp_dir / 'scores.json').write_text(json.dumps({
         'eval_model': eval_model,
+        'metric': metric,
         'sample_seeds': list(range(num_seeds)),
-        'val_roc_auc': scores,
-        'mean_val_roc_auc': mean_score,
+        'val_scores': scores,
+        'mean_val_score': mean_score,
     }, indent=2, allow_nan=False) + '\n')
     return mean_score
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Tune DDPM learning rate, training batch size, architecture and diffusion timesteps.'
-    )
-    parser.add_argument('--config', type=Path, required=True,
-                        help='Base config; relative paths are resolved from the project root.')
-    parser.add_argument('--ds_name', default=None, help='Optional check against data.path.')
-    parser.add_argument('--num_trials', type=positive_int, default=30,
-                        help='Number of trials (default: 30).')
-    parser.add_argument('--num_seeds', type=positive_int, default=3,
-                        help='Number of shared sampling seeds per trial (default: 3).')
-    parser.add_argument('--eval_model', choices=['catboost', 'tree', 'rf', 'lr', 'mlp'],
-                        default='catboost')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--ds_name', default=None)
+    parser.add_argument('--num_trials', type=positive_int, default=8)
+    parser.add_argument('--num_seeds', type=positive_int, default=3)
     args = parser.parse_args()
 
-    import optuna
-    from utils import load_config, dump_config
-
+    
     config_path = args.config if args.config.is_absolute() else ROOT / args.config
     base_config = load_config(config_path)
-    ds_name = validate_config(base_config, args.ds_name)
-    base_config['evaluation']['models'] = [args.eval_model]
     base_config['evaluation']['mode'] = 'synthetic'
-    if args.eval_model == 'catboost':
-        params_path = base_config['evaluation'].get('catboost_params_path')
-        if not params_path or not (ROOT / params_path).is_file():
-            raise ValueError('evaluation.catboost_params_path must point to an existing file')
+
+    info = load_json(ROOT / base_config['data']['path'] / 'info.json')
+    metric = (
+        'r2'
+        if info['task_type'] == 'regression'
+        else 'roc_auc'
+    )
+    ds_name = validate_config(base_config, args.ds_name)
 
     parent_path = ROOT / 'exp' / ds_name / 'many-exps'
     parent_path.mkdir(parents=True, exist_ok=True)
@@ -146,10 +139,11 @@ def main():
     print(f'[INFO] Tuning output: {exps_path}')
 
     study = optuna.create_study(
-        sampler=optuna.samplers.TPESampler(seed=0), direction='maximize',
+        sampler=optuna.samplers.GridSampler(SEARCH_SPACE, seed=0), 
+        direction='maximize',
     )
     study.optimize(
-        lambda trial: objective(trial, base_config, exps_path, args.eval_model, args.num_seeds),
+        lambda trial: objective(trial, base_config, exps_path, args.eval_model, args.num_seeds, metric),
         n_trials=args.num_trials, show_progress_bar=True,
     )
 
@@ -162,10 +156,11 @@ def main():
     (best_dir / 'summary.json').write_text(json.dumps({
         'trial': study.best_trial.number,
         'params': study.best_trial.params,
-        'mean_val_roc_auc': study.best_value,
+        'metric': metric,
+        'mean_val_score': study.best_value,
         'sample_scores': study.best_trial.user_attrs['sample_scores'],
     }, indent=2, allow_nan=False) + '\n')
-    print(f'[INFO] Best validation ROC-AUC: {study.best_value:.6f}')
+    print(f'[INFO] Best validation {metric}: {study.best_value:.6f}')
     print(f'[INFO] Best config: {best_config_path}')
     print('[INFO] To train this config, run scripts/pipeline.py --config <best config> --encode --train')
 
