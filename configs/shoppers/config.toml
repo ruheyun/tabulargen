@@ -22,9 +22,9 @@ n_blocks = 2
 activation = 'SiLU'
 
 [diffusion]
-num_timesteps = 1000
+num_timesteps = 500
 gaussian_loss_type = "mse"
-scheduler = "cosine"
+scheduler = "linear"
 
 [train]
 seed = 0
@@ -35,7 +35,7 @@ weight_decay = 0.0
 batch_size = 256
 
 [sample]
-seed = 4
+seed = 2
 class_distribution = "empirical"
 num_samples = 7398
 batch_size = 256
