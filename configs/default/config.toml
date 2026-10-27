@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/default"
 
 [experiment]
-path = "exp/default/run_10"
+path = "exp/default/run_00"
 
 [encoding]
 num_encoder = "minmax"
@@ -22,7 +22,7 @@ n_blocks = 2
 activation = 'SiLU'
 
 [diffusion]
-num_timesteps = 1000
+num_timesteps = 500
 gaussian_loss_type = "mse"
 scheduler = "cosine"
 
@@ -35,7 +35,7 @@ weight_decay = 0.0
 batch_size = 256
 
 [sample]
-seed = 4
+seed = 1
 class_distribution = "empirical"
 num_samples = 18000
 batch_size = 256
