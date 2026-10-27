@@ -111,7 +111,6 @@ def train_tstr(
                 random_seed=seed,
                 class_names=[str(i) for i in range(info['n_classes'])] if info['task_type'] == 'multiclass' else ["0", "1"],
                 allow_writing_files=False,
-                verbose=0
             ),
             "tree": DecisionTreeClassifier(max_depth=8, min_samples_leaf=10, random_state=seed),
             "rf": RandomForestClassifier(max_depth=15, min_samples_leaf=5, random_state=seed, n_jobs=-1),
@@ -131,7 +130,7 @@ def train_tstr(
         X = X_catboost if model_name == 'catboost' else X_simple
 
         if model_name == 'catboost':
-            model.fit(X['train'], y['train'], eval_set=(X['val'], y['val']), verbose=100)
+            model.fit(X['train'], y['train'], eval_set=(X['val'], y['val']), verbose=0)
         else:
             model.fit(X['train'], y['train'])
 
