@@ -134,6 +134,7 @@ def train(
         num_timesteps=500,
         gaussian_loss_type='mse',
         scheduler='cosine',
+        ratio=1,
         dp_params=None,
         device=torch.device('cuda:0'),
         seed=0,
@@ -167,6 +168,7 @@ def train(
         gaussian_loss_type=gaussian_loss_type,
         num_timesteps=num_timesteps,
         scheduler=scheduler,
+        ratio=ratio,
         dp_params=dp_params,
         device=device
     )
@@ -205,7 +207,8 @@ def train(
             'diffusion_params': {
                 'num_timesteps': num_timesteps,
                 'gaussian_loss_type': gaussian_loss_type,
-                'scheduler': scheduler
+                'scheduler': scheduler,
+                'ratio': ratio
             },
             'encoding': {
                 'path': os.path.relpath(Path(exp_path).resolve(), Path(checkpoint_path).resolve())

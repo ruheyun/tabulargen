@@ -32,12 +32,15 @@ def main():
     parser.add_argument('--eval', action='store_true', default=False)
     parser.add_argument('--eval5', action='store_true', default=False)
     parser.add_argument('--sample_seed', type=int)
+    parser.add_argument('--ratio', type=float, default=1.0)
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
 
     if args.sample_seed is not None and args.sample_seed >= 0:
         raw_config['sample']['seed'] = args.sample_seed
+
+    raw_config['diffusion']['ratio'] = args.ratio
 
     paths = RunPaths(Path(raw_config['experiment']['path']))
     data_path = raw_config['data']['path']

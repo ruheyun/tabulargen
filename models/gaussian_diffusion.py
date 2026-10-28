@@ -5,7 +5,7 @@ from utils import *
 eps = 1e-8
 
 
-def get_named_beta_schedule(schedule_name, num_diffusion_timesteps):
+def get_named_beta_schedule(schedule_name, num_diffusion_timesteps, ratio=0.5):
     
     if schedule_name == "linear":
         
@@ -22,6 +22,15 @@ def get_named_beta_schedule(schedule_name, num_diffusion_timesteps):
             num_diffusion_timesteps,
             lambda t: math.cos((t + 0.008) / 1.008 * math.pi / 2) ** 2,
         )
+
+    elif schedule_name == "mix":
+
+        if not 0 <= ratio <= 1:
+            raise ValueError("ratio must be in [0, 1]")
+        linear_betas = get_named_beta_schedule("linear", num_diffusion_timesteps)
+        cosine_betas = get_named_beta_schedule("cosine", num_diffusion_timesteps)
+        mix_betas = ratio * linear_betas + (1 - ratio) * cosine_betas
+        return mix_betas
     
     else:
 
@@ -52,6 +61,7 @@ class GaussianDiffusion(torch.nn.Module):
         gaussian_parametrization='eps',
         parametrization='x0',
         scheduler='cosine',
+        ratio=1,
         dp_params=None,
         device=torch.device('cpu'),
     ):
@@ -69,7 +79,7 @@ class GaussianDiffusion(torch.nn.Module):
         self.scheduler = scheduler
         self.dp_params = dp_params
 
-        betas = get_named_beta_schedule(scheduler, num_timesteps)
+        betas = get_named_beta_schedule(scheduler, num_timesteps, ratio)
         betas = torch.tensor(betas.astype('float64'))
         alphas = 1. - betas
 
