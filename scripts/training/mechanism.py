@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import brentq
 from scipy.special import gammaln, logsumexp
 from scipy.stats import norm
+from sklearn.cluster import KMeans
 import os
 import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,10 +33,72 @@ def dp_histogram(labels, num_classes, epsilon=0.1, delta=1e-5):
     return p_y.numpy()
 
 
+def k_mearns(K, lst, X):
+    kmeans = KMeans(n_clusters=K, random_state=42, n_init=10)
+
+    # 计算分界点
+    centers = kmeans.cluster_centers_.flatten()
+    sorted_centers = np.sort(centers)  
+    print("排序后的簇质心:", sorted_centers)
+
+    # 相邻质心中点作为分界点
+    boundaries_noise = (sorted_centers[:-1] + sorted_centers[1:]) / 2
+
+    # 找对应的时间步分界（近似）
+    t_boundaries = []
+    for b in boundaries_noise:
+        idx = np.argmin(np.abs(lst.flatten() - b))
+        t_boundaries.append(X[idx])
+    t_boundaries = np.array(t_boundaries)
+    print("对应的时间步分界点（近似）:", t_boundaries)
+
+    return t_boundaries
+
+
+def epsilon_allocation(K, type):
+    k = np.arange(1, K + 1)
+
+    if type == 'HA':
+        # 1. Harmonic Allocation
+        ratio = (1/k - 1/(k + 1)) * (K + 1) / K
+    elif type == 'EA':
+        # 2. Exponential Allocation
+        ratio = (2**(K - k)) / (2**K - 1)
+    else:
+        raise ValueError('type is error')
+
+    return ratio
+
+
+def k_dp_params(K, lst, X, type, sample_rate, steps, epsilon, delta, account):
+    t_bd = k_mearns(K, lst, X)
+
+    rt = epsilon_allocation(K, type)
+
+    noise_multiplier = []
+    accountant = Accountant(sample_rate, steps)
+    for k in range(K):
+        noise_multiplier = accountant.get_noise_multiplier(
+                        epsilon=epsilon * rt[k], 
+                        delta=delta,
+                        account='gdp'
+                    )
+    return
+
 class Accountant:
     def __init__(self, sample_rate, steps):
         self.q = sample_rate
         self.steps = steps
+
+    def get_noise_multiplier(self, epsilon, delta, account='gdp', max_order=100):
+        if account == 'gdp':
+            return self.gdp_get_noise_multiplier(epsilon, delta)
+        elif account == 'rdp':
+            return self.rdp_get_noise_multiplier(epsilon, delta)
+        elif account == 'ma':
+            return self.ma_get_noise_multiplier(epsilon, delta, max_order)
+        else:
+            raise ValueError('account is error!')
 
     def ma_get_epsilon(self, noise_multiplier, delta, max_order=100):
         sigma = noise_multiplier
@@ -138,6 +201,20 @@ class Accountant:
             return delta1 - delta
 
         return brentq(func, 0.1, 100.0)
+
+    def gdp_get_mu_from_epsilon_delta(self, epsilon, delta):
+        if epsilon < 0 or delta <= 0 or delta >= 1:
+            raise ValueError("epsilon need >= 0, and delta need 0 < delta < 1")
+
+        def func(mu):
+            return self.gdp_delta_from_mu(epsilon, mu) - delta
+
+        lo = 0.0
+        hi = 1.0
+        while func(hi) < 0:
+            hi *= 2.0
+
+        return brentq(func, lo, hi)
 
 
 if __name__ == '__main__':

@@ -37,32 +37,7 @@ class Trainer:
         self.epsilon = dp_params['epsilon']
         self.delta = dp_params['delta']
         self.max_grad_norm = dp_params['max_grad_norm']
-
-        if self.is_dp:
-            sample_rate = 1 / len(train_iter)
-            accountant = Accountant(sample_rate, self.steps)
-            gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
-            # rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
-            # ma_noise = accountant.ma_get_noise_multiplier(epsilon=self.epsilon, delta=self.delta)
-            noise_multiplier = gdp_noise
-
-            print(f'noise: {noise_multiplier}')
-
-            self.privacy_engine = PrivacyEngine()
-            self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
-                module=self.diffusion,
-                optimizer=self.optimizer,
-                data_loader=self.train_iter,
-                max_grad_norm=self.max_grad_norm,
-                noise_multiplier=noise_multiplier
-            )
-            self.diffusion.compute_loss = self.diffusion._module.compute_loss
-
-        self.scheduler = CosineAnnealingLR(
-            self.optimizer,
-            T_max=self.steps,
-            eta_min=self.init_lr * 0.01,
-        )
+        self.K = dp_params['K']
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
@@ -85,7 +60,7 @@ class Trainer:
         self.optimizer.step()
 
         return loss
-
+        
     def run_loop(self):
         step = 0
         pbar = tqdm(iterable=range(self.epochs), position=0, leave=True)
@@ -123,6 +98,47 @@ class Trainer:
             if self.is_dp else 'No-DP training done!'
         )
 
+    def run(self):
+        noise_multiplier = None
+        accountant = None
+        if self.is_dp:
+            sample_rate = 1 / len(self.train_iter)
+            accountant = Accountant(sample_rate, self.steps)
+            noise_multiplier = accountant.get_noise_multiplier(
+                epsilon=self.epsilon, 
+                delta=self.delta,
+                account='gdp'
+            )
+
+            print(f'noise: {noise_multiplier}')
+
+            self.privacy_engine = PrivacyEngine()
+            self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
+                module=self.diffusion,
+                optimizer=self.optimizer,
+                data_loader=self.train_iter,
+                max_grad_norm=self.max_grad_norm,
+                noise_multiplier=noise_multiplier
+            )
+            self.diffusion.compute_loss = self.diffusion._module.compute_loss
+
+        self.scheduler = CosineAnnealingLR(
+            self.optimizer,
+            T_max=self.steps,
+            eta_min=self.init_lr * 0.01,
+        )
+
+        if self.is_dp:
+            for i in range(self.K):
+                self.optimizer.noise_multiplier = accountant.get_noise_multiplier(
+                    epsilon=self.epsilon, 
+                    delta=self.delta,
+                    account='gdp'
+                )
+                self.run_loop()
+        else:
+            self.run_loop()
+    
 
 def train(
         exp_path='exp/adult/run_00/encoded',
