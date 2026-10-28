@@ -24,7 +24,7 @@ activation = 'SiLU'
 [diffusion]
 num_timesteps = 500
 gaussian_loss_type = "mse"
-scheduler = "mix"
+scheduler = "linear"
 
 [train]
 seed = 0
