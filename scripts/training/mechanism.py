@@ -34,27 +34,28 @@ def dp_histogram(labels, num_classes, epsilon=0.1, delta=1e-5):
 
 
 def k_mearns(K, lst, X):
-    lst = lst.reshape(-1, 1)
+    lst = np.sqrt(lst.reshape(-1, 1))
     kmeans = KMeans(n_clusters=K, random_state=42, n_init=10)
     kmeans.fit_predict(lst)  
 
     # 计算分界点
     centers = kmeans.cluster_centers_.flatten()
     sorted_centers = np.sort(centers)  
-    print("排序后的簇质心:", sorted_centers)
+    # print("排序后的簇质心:", sorted_centers)
 
     # 相邻质心中点作为分界点
     boundaries_noise = (sorted_centers[:-1] + sorted_centers[1:]) / 2
 
     # 找对应的时间步分界（近似）
-    t_boundaries = []
+    t_boundaries = [0]
     for b in boundaries_noise:
         idx = np.argmin(np.abs(lst.flatten() - b))
         t_boundaries.append(X[idx])
+    t_boundaries.append(len(X))
     t_boundaries = np.array(t_boundaries)
-    print("对应的时间步分界点（近似）:", t_boundaries)
+    # print("对应的时间步分界点（近似）:", t_boundaries)
 
-    return t_boundaries
+    return np.array([(t_boundaries[i], t_boundaries[i+1]) for i in range(K)])[::-1]
 
 
 def mu_allocation(K, type):
@@ -70,7 +71,7 @@ def mu_allocation(K, type):
         raise ValueError('type is error')
     
     mu_ratio = np.sqrt(ratio / ratio.sum())  # ratio.sum() == 1
-    return mu_ratio
+    return np.sort(mu_ratio)
 
 
 def epoch_allocation(K, total_epochs, type='equal'):

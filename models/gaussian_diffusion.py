@@ -80,6 +80,9 @@ class GaussianDiffusion(torch.nn.Module):
         self.dp_params = dp_params
 
         betas = get_named_beta_schedule(scheduler, num_timesteps, ratio)
+
+        self.noise_intensity = betas.copy()
+
         betas = torch.tensor(betas.astype('float64'))
         alphas = 1. - betas
 
@@ -96,8 +99,6 @@ class GaussianDiffusion(torch.nn.Module):
         sqrt_one_minus_alphas_cumprod = np.sqrt(1.0 - alphas_cumprod)
         sqrt_recip_alphas_cumprod = np.sqrt(1.0 / alphas_cumprod)
         sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / alphas_cumprod - 1)
-
-        self.noise_intensity = sqrt_one_minus_alphas_cumprod
         
         self.posterior_variance = (
                 betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
