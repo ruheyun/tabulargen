@@ -5,7 +5,7 @@ import torch
 import math
 import numpy as np
 from scipy.optimize import brentq
-from scipy.special import gammaln, logsumexp
+from scipy.special import gammaln, logsumexp, log_ndtr
 from scipy.stats import norm
 from sklearn.cluster import KMeans
 import os
@@ -195,53 +195,82 @@ class Accountant:
 
     def gdp_get_mu(self, noise_multiplier, steps=None):
         sigma = noise_multiplier
-        steps = steps if steps is not None else self.steps
+        steps = self.steps if steps is None else steps
+
+        if sigma <= 0 or steps <= 0 or not 0 < self.q <= 1:
+            raise ValueError("Invalid sigma, steps or sample rate")
+
+        # 无子采样：高斯机制的精确 GDP 组合
+        if self.q == 1:
+            return np.sqrt(steps) / sigma
+
+        # Poisson 子采样：CLT 近似
         return self.q * np.sqrt(
-            steps * (np.exp(1.0 / sigma**2) - 1.0)
+            steps * np.expm1(1.0 / sigma**2)
         )
 
     @staticmethod
     def gdp_delta_from_mu(epsilon, mu):
-        if mu <= 0:
+        # if mu <= 0:
+        #     return 0.0
+
+        # return (
+        #     norm.cdf(mu / 2 - epsilon / mu)
+        #     - np.exp(epsilon)
+        #     * norm.cdf(-mu / 2 - epsilon / mu)
+        # )
+        if epsilon < 0 or mu < 0:
+            raise ValueError("epsilon and mu must be non-negative")
+
+        if mu == 0:
             return 0.0
 
-        return (
-            norm.cdf(mu / 2 - epsilon / mu)
-            - np.exp(epsilon)
-            * norm.cdf(-mu / 2 - epsilon / mu)
+        a = mu / 2 - epsilon / mu
+        b = -mu / 2 - epsilon / mu
+
+        # 在 log 域中计算，避免 exp(epsilon) 溢出
+        log_a = log_ndtr(a)
+        log_b = epsilon + log_ndtr(b)
+
+        if log_b >= log_a:
+            return 0.0
+
+        return float(
+            np.exp(log_a) * (-np.expm1(log_b - log_a))
         )
 
     def gdp_get_epsilon(self, noise_multiplier, delta):
+        if not 0 < delta < 1:
+            raise ValueError("delta must be in (0, 1)")
+
         mu = self.gdp_get_mu(noise_multiplier)
+
+        if delta >= self.gdp_delta_from_mu(0.0, mu):
+            return 0.0
 
         def func(epsilon):
             return self.gdp_delta_from_mu(epsilon, mu) - delta
 
-        return brentq(func, 0.0, 1000.0)
+        lo, hi = 0.0, 1.0
+        while func(hi) > 0:
+            hi *= 2.0
+
+        return brentq(func, lo, hi)
 
     def gdp_get_noise_multiplier(self, epsilon, delta):
-
-        def func(sigma):
-            mu = self.gdp_get_mu(sigma)
-
-            delta1 = self.gdp_delta_from_mu(
-                epsilon,
-                mu,
-            )
-
-            return delta1 - delta
-
-        return brentq(func, 0.1, 100.0)
+        mu = self.gdp_get_mu_from_epsilon_delta(
+            epsilon, delta
+        )
+        return self.gdp_get_noise_multiplier_from_mu(mu)
 
     def gdp_get_mu_from_epsilon_delta(self, epsilon, delta):
-        if epsilon < 0 or delta <= 0 or delta >= 1:
-            raise ValueError("epsilon need >= 0, and delta need 0 < delta < 1")
+        if epsilon < 0 or not 0 < delta < 1:
+            raise ValueError("Invalid epsilon or delta")
 
         def func(mu):
             return self.gdp_delta_from_mu(epsilon, mu) - delta
 
-        lo = 0.0
-        hi = 1.0
+        lo, hi = 0.0, 1.0
         while func(hi) < 0:
             hi *= 2.0
 
@@ -249,18 +278,17 @@ class Accountant:
 
     def gdp_get_noise_multiplier_from_mu(self, mu, steps=None):
         if mu <= 0:
-            raise ValueError("mu need >0")
+            raise ValueError("mu must be positive")
 
-        steps = steps if steps is not None else self.steps
+        steps = self.steps if steps is None else steps
 
-        def func(sigma):
-            return self.gdp_get_mu(sigma, steps) - mu
+        if steps <= 0 or not 0 < self.q <= 1:
+            raise ValueError("Invalid steps or sample rate")
 
-        # 动态扩张上界，防止 sigma 超出预设的 100.0 导致无解
-        lo = 0.0
-        hi = 0.1
-        while func(hi) < 0:
-            hi *= 2.0
+        if self.q == 1:
+            return np.sqrt(steps) / mu
 
-        return brentq(func, lo, hi)
-
+        # 解析反解 sigma
+        return 1.0 / np.sqrt(
+            np.log1p((mu / self.q)**2 / steps)
+        )
