@@ -96,6 +96,8 @@ class GaussianDiffusion(torch.nn.Module):
         sqrt_one_minus_alphas_cumprod = np.sqrt(1.0 - alphas_cumprod)
         sqrt_recip_alphas_cumprod = np.sqrt(1.0 / alphas_cumprod)
         sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / alphas_cumprod - 1)
+
+        self.noise_intensity = sqrt_one_minus_alphas_cumprod
         
         self.posterior_variance = (
                 betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)

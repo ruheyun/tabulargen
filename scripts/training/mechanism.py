@@ -34,7 +34,9 @@ def dp_histogram(labels, num_classes, epsilon=0.1, delta=1e-5):
 
 
 def k_mearns(K, lst, X):
+    lst = lst.reshape(-1, 1)
     kmeans = KMeans(n_clusters=K, random_state=42, n_init=10)
+    kmeans.fit_predict(lst)  
 
     # 计算分界点
     centers = kmeans.cluster_centers_.flatten()
@@ -55,7 +57,7 @@ def k_mearns(K, lst, X):
     return t_boundaries
 
 
-def epsilon_allocation(K, type):
+def mu_allocation(K, type):
     k = np.arange(1, K + 1)
 
     if type == 'HA':
@@ -66,24 +68,53 @@ def epsilon_allocation(K, type):
         ratio = (2**(K - k)) / (2**K - 1)
     else:
         raise ValueError('type is error')
+    
+    mu_ratio = np.sqrt(ratio / ratio.sum())  # ratio.sum() == 1
+    return mu_ratio
 
-    return ratio
 
+def epoch_allocation(K, total_epochs, type='equal'):
+    k = np.arange(1, K + 1)
+    if type == 'decay':
+        weight = 1.0 / k
+        weight = weight / weight.sum()
+        epochs = np.round(weight * total_epochs).astype(int)
+        epochs = np.maximum(epochs, 1)
+        diff = total_epochs - epochs.sum()
+        epochs[0] += diff
+        return epochs
+    elif type == 'equal':
+        base = total_epochs // K
+        remainder = total_epochs % K
+        epochs = np.full(K, base)
+        epochs[:remainder] += 1
+        return epochs
+    else:
+        raise ValueError('type is error')
+    
 
-def k_dp_params(K, lst, X, type, sample_rate, steps, epsilon, delta, account):
+def k_dp_params(K, lst, X, train_iter, epochs, epsilon, delta, account='gdp'):
     t_bd = k_mearns(K, lst, X)
 
-    rt = epsilon_allocation(K, type)
+    mu_rt = mu_allocation(K, type='EA')
+
+    epoch_alt = epoch_allocation(K, epochs, type='equal')
+    steps_alt = epoch_alt * len(train_iter)
 
     noise_multiplier = []
+
+    sample_rate = 1 / len(train_iter)
+    steps = epochs * len(train_iter)
     accountant = Accountant(sample_rate, steps)
+    mu_total = accountant.gdp_get_mu_from_epsilon_delta(epsilon, delta)
     for k in range(K):
-        noise_multiplier = accountant.get_noise_multiplier(
-                        epsilon=epsilon * rt[k], 
-                        delta=delta,
-                        account='gdp'
-                    )
-    return
+        noise_multiplier.append(
+            accountant.gdp_get_noise_multiplier_from_mu(
+                mu_total * mu_rt[k],
+                steps_alt[k]
+            )
+        )
+    return t_bd, noise_multiplier
 
 class Accountant:
     def __init__(self, sample_rate, steps):
@@ -162,11 +193,11 @@ class Accountant:
             
         return noise_multiplier
 
-    def gdp_get_mu(self, noise_multiplier):
+    def gdp_get_mu(self, noise_multiplier, steps=None):
         sigma = noise_multiplier
-
+        steps = steps if steps is not None else self.steps
         return self.q * np.sqrt(
-            self.steps * (np.exp(1.0 / sigma**2) - 1.0)
+            steps * (np.exp(1.0 / sigma**2) - 1.0)
         )
 
     @staticmethod
@@ -216,27 +247,20 @@ class Accountant:
 
         return brentq(func, lo, hi)
 
+    def gdp_get_noise_multiplier_from_mu(self, mu, steps=None):
+        if mu <= 0:
+            raise ValueError("mu need >0")
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
-    args = parser.parse_args()
-    raw_config = load_config(args.config)
-    exp_path = raw_config['exp_path']
-    batch_size = raw_config['train']['main']['batch_size']
-    epochs = raw_config['train']['main']['epochs']
-    dataset = TabularDataset(exp_path)
-    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,  num_workers=2, pin_memory=True)
-    sample_rate = 1 / len(train_loader)
-    steps = int(epochs / sample_rate)
+        steps = steps if steps is not None else self.steps
 
-    accountant = Accountant(sample_rate, steps)
+        def func(sigma):
+            return self.gdp_get_mu(sigma, steps) - mu
 
-    ma_noise = accountant.ma_get_noise_multiplier(epsilon=1, delta=1e-5)
-    rdp_noise = accountant.rdp_get_noise_multiplier(epsilon=1, delta=1e-5)
-    gdp_noise = accountant.gdp_get_noise_multiplier(epsilon=1, delta=1e-5)
-    print(f'ma_noise: {ma_noise}\nrdp_noise: {rdp_noise}\ngdp_noise: {gdp_noise}')
+        # 动态扩张上界，防止 sigma 超出预设的 100.0 导致无解
+        lo = 0.0
+        hi = 0.1
+        while func(hi) < 0:
+            hi *= 2.0
 
-    # raw_config['dp']['sigma'] = noise
+        return brentq(func, lo, hi)
 
-    # dump_config(raw_config, args.config)

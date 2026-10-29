@@ -27,7 +27,7 @@ def main():
     # 启用编码、训练、采样、测试
     parser.add_argument('--config', metavar='FILE', default='configs/adult/config.toml')
     parser.add_argument('--encode', action='store_true', default=False)
-    parser.add_argument('--train', action='store_true', default=False)
+    parser.add_argument('--train', action='store_true', default=True)
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
     parser.add_argument('--eval5', action='store_true', default=False)

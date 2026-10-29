@@ -15,13 +15,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
 from models import GaussianDiffusion, MLPDiffusion
 from utils import update_ema, TabularDataset
-from .mechanism import Accountant
+from .mechanism import k_dp_params
 
 
 class Trainer:
     def __init__(self, diffusion, ema_model, train_iter, lr, optimizer, dp_params,
                 epochs, info, loss_history, device=torch.device('cuda:0')):
         self.diffusion = diffusion
+        self.num_timesteps = diffusion.num_timesteps
         self.ema_model = ema_model
         self.train_iter = train_iter
         self.dp_params = dp_params
@@ -100,14 +101,15 @@ class Trainer:
 
     def run(self):
         noise_multiplier = None
-        accountant = None
         if self.is_dp:
-            sample_rate = 1 / len(self.train_iter)
-            accountant = Accountant(sample_rate, self.steps)
-            noise_multiplier = accountant.get_noise_multiplier(
-                epsilon=self.epsilon, 
-                delta=self.delta,
-                account='gdp'
+            t_bd, noise_multiplier = k_dp_params(
+                self.K,
+                self.diffusion.noise_intensity,
+                np.arange(self.num_timesteps),
+                self.train_iter,
+                self.epochs,
+                self.epsilon,
+                self.delta,
             )
 
             print(f'noise: {noise_multiplier}')
@@ -118,7 +120,7 @@ class Trainer:
                 optimizer=self.optimizer,
                 data_loader=self.train_iter,
                 max_grad_norm=self.max_grad_norm,
-                noise_multiplier=noise_multiplier
+                noise_multiplier=noise_multiplier[0]
             )
             self.diffusion.compute_loss = self.diffusion._module.compute_loss
 
@@ -129,12 +131,8 @@ class Trainer:
         )
 
         if self.is_dp:
-            for i in range(self.K):
-                self.optimizer.noise_multiplier = accountant.get_noise_multiplier(
-                    epsilon=self.epsilon, 
-                    delta=self.delta,
-                    account='gdp'
-                )
+            for k in range(self.K):
+                self.optimizer.noise_multiplier = noise_multiplier[k]
                 self.run_loop()
         else:
             self.run_loop()
@@ -210,7 +208,7 @@ def train(
         loss_history,
         device
     )
-    trainer.run_loop()
+    trainer.run()
 
     os.makedirs(checkpoint_path, exist_ok=True)
     os.makedirs(log_path, exist_ok=True)
