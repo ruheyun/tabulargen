@@ -126,7 +126,12 @@ class Trainer:
         )
         
         if self.is_dp:
-            print(f'{self.epsilon}, {self.delta})-DP training...\n{epochs_alt}\n{t_bd}\n{noise_multiplier}')
+            print(
+                f'(({self.epsilon}, {self.delta})-DP {self.K} phase training...\n'
+                f'epochs: {epochs_alt}\n'
+                f'timesteps interval: {t_bd}\n'
+                f'noise_multiplier: {noise_multiplier})'
+            )
             for k in range(self.K):
                 self.optimizer.noise_multiplier = noise_multiplier[k]
                 self.run_loop(epoch_alt=epochs_alt[k], ts=t_bd[k])
