@@ -1,4 +1,5 @@
 import math
+import numpy as np
 from tqdm import tqdm
 from utils import *
 
@@ -253,7 +254,7 @@ class GaussianDiffusion(torch.nn.Module):
         
         
     def sample_time(self, b, device, method='uniform', ts=None):
-        if ts is not None and not isinstance(ts, list):
+        if ts is not None and not isinstance(ts, np.ndarray):
             raise ValueError('timesteps interval is invaild')
 
         l = 0 if ts is None else ts[0]
@@ -301,7 +302,7 @@ class GaussianDiffusion(torch.nn.Module):
         b = x.shape[0]
         device = x.device
     
-        if isinstance(ts, list) or ts is None:
+        if isinstance(ts, np.ndarray) or ts is None:
             t, pt = self.sample_time(b, device, 'uniform', ts)
         elif isinstance(ts, int):
             t = torch.tensor(ts, device=device).long().expand(b)
