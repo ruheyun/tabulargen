@@ -252,7 +252,13 @@ class GaussianDiffusion(torch.nn.Module):
         }
         
         
-    def sample_time(self, b, device, method='uniform'):
+    def sample_time(self, b, device, method='uniform', ts=None):
+        if ts is not None and not isinstance(ts, tuple):
+            raise ValueError('timesteps interval is invaild')
+
+        l = 0 if ts is None else ts[0]
+        r = self.num_timesteps if ts is None else ts[1]
+        
         if method == 'importance':
             if not (self.Lt_count > 10).all():
                 return self.sample_time(b, device, method='uniform')
@@ -268,8 +274,10 @@ class GaussianDiffusion(torch.nn.Module):
             return t, pt
 
         elif method == 'uniform':
-            t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
-            pt = torch.ones_like(t).float() / self.num_timesteps
+            # t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
+            # pt = torch.ones_like(t).float() / self.num_timesteps
+            t = torch.randint(l, r, (b,), device=device).long()
+            pt = torch.ones_like(t).float() / (r - l)
 
             return t, pt
         
@@ -289,14 +297,16 @@ class GaussianDiffusion(torch.nn.Module):
             raise ValueError
         
     
-    def compute_loss(self, x, out_dict, ts=-1):
+    def compute_loss(self, x, out_dict, ts=None):
         b = x.shape[0]
         device = x.device
     
-        if ts == -1:
-            t, pt = self.sample_time(b, device, 'uniform')
-        else:
+        if isinstance(ts, tuple) or ts is None:
+            t, pt = self.sample_time(b, device, 'uniform', ts)
+        elif isinstance(ts, int):
             t = torch.tensor(ts, device=device).long().expand(b)
+        else:
+            raise ValueError('timesteps is invaild')
 
         noise = torch.randn_like(x)
         x_t = self.gaussian_q_sample(x, t, noise=noise)

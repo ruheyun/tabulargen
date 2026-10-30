@@ -33,6 +33,7 @@ class Trainer:
         self.log_every = 10
         self.epochs = epochs
         self.steps = epochs * len(train_iter)
+        self.step = 0
         self.info = info
         self.is_dp = dp_params['is_dp']
         self.epsilon = dp_params['epsilon']
@@ -50,22 +51,22 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _run_step(self, x, out_dict):
+    def _run_step(self, x, out_dict, ts=None):
         x = x.to(self.device)
         for k in out_dict:
             out_dict[k] = out_dict[k].long().to(self.device)
         self.optimizer.zero_grad(set_to_none=True)
-        loss = self.diffusion.compute_loss(x, out_dict)
+        loss = self.diffusion.compute_loss(x, out_dict, ts)
         loss.backward()
 
         self.optimizer.step()
 
         return loss
         
-    def run_loop(self):
-        step = 0
-        pbar = tqdm(iterable=range(self.epochs), position=0, leave=True)
-        for epoch in range(self.epochs):
+    def run_loop(self, epoch_alt=None, ts=None):
+        epochs = self.epochs if epoch_alt is None else epoch_alt
+        pbar = tqdm(iterable=range(epochs), position=0, leave=True)
+        for epoch in range(epochs):
             curr_loss_gauss = 0.0
             curr_count = 0
             for x, out_dict in self.train_iter:
@@ -74,20 +75,20 @@ class Trainer:
                 else:
                     out_dict = {'y': out_dict}
 
-                batch_loss_gauss = self._run_step(x, out_dict)
+                batch_loss_gauss = self._run_step(x, out_dict, ts)
 
                 curr_count += len(x)
                 curr_loss_gauss += batch_loss_gauss.item() * len(x)
 
-                # self._anneal_lr(step)
+                # self._anneal_lr(self.step)
                 self.scheduler.step()
-                step += 1
+                self.step += 1
 
                 update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 
-                if (step + 1) % self.log_every == 0:
+                if (self.step + 1) % self.log_every == 0:
                     loss = np.around(curr_loss_gauss / curr_count, 3)
-                    self.loss_history.loc[len(self.loss_history)] = [step + 1, loss]
+                    self.loss_history.loc[len(self.loss_history)] = [self.step + 1, loss]
             
             # pbar.set_postfix({'Loss': round(loss, 3),})
             loss = np.around(curr_loss_gauss / curr_count, 3)
@@ -102,7 +103,7 @@ class Trainer:
     def run(self):
         noise_multiplier = None
         if self.is_dp:
-            t_bd, noise_multiplier = k_dp_params(
+            t_bd, epochs_alt, noise_multiplier = k_dp_params(
                 self.K,
                 self.diffusion.noise_intensity,
                 np.arange(self.num_timesteps),
@@ -133,7 +134,7 @@ class Trainer:
         if self.is_dp:
             for k in range(self.K):
                 self.optimizer.noise_multiplier = noise_multiplier[k]
-                self.run_loop()
+                self.run_loop(epoch_alt=epochs_alt[k], ts=t_bd[k])
         else:
             self.run_loop()
     

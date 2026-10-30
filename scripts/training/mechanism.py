@@ -115,7 +115,7 @@ def k_dp_params(K, lst, X, train_iter, epochs, epsilon, delta, account='gdp'):
                 steps_alt[k]
             )
         )
-    return t_bd, noise_multiplier
+    return t_bd, epoch_alt, noise_multiplier
 
 class Accountant:
     def __init__(self, sample_rate, steps):
