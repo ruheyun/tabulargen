@@ -51,4 +51,4 @@ is_dp = true
 epsilon = 1.0
 max_grad_norm = 1.0
 delta = 1e-05
-K = 2
+K = 3

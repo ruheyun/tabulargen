@@ -55,7 +55,7 @@ def k_mearns(K, lst, X):
     t_boundaries = np.array(t_boundaries)
     # print("对应的时间步分界点（近似）:", t_boundaries)
 
-    return np.array([(t_boundaries[i], t_boundaries[i+1]) for i in range(K)])[::-1]
+    return t_boundaries
 
 
 def mu_allocation(K, type):
@@ -71,7 +71,7 @@ def mu_allocation(K, type):
         raise ValueError('type is error')
     
     mu_ratio = np.sqrt(ratio / ratio.sum())  # ratio.sum() == 1
-    return np.sort(mu_ratio)
+    return mu_ratio
 
 
 def epoch_allocation(K, total_epochs, type='equal'):

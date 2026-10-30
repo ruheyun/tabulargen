@@ -52,19 +52,19 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _run_step(self, x, out_dict, ts=None):
+    def _run_step(self, x, out_dict, ts=None, phase=None):
         x = x.to(self.device)
         for k in out_dict:
             out_dict[k] = out_dict[k].long().to(self.device)
         self.optimizer.zero_grad(set_to_none=True)
-        loss = self.diffusion.compute_loss(x, out_dict, ts)
+        loss = self.diffusion.compute_loss(x, out_dict, phase=phase)
         loss.backward()
 
         self.optimizer.step()
 
         return loss
         
-    def run_loop(self, epoch_alt=None, ts=None):
+    def run_loop(self, epoch_alt=None, phase=None):
         epochs = self.epochs if epoch_alt is None else epoch_alt
         pbar = tqdm(iterable=range(epochs), position=0, leave=True)
         for epoch in range(epochs):
@@ -76,7 +76,7 @@ class Trainer:
                 else:
                     out_dict = {'y': out_dict}
 
-                batch_loss_gauss = self._run_step(x, out_dict, ts)
+                batch_loss_gauss = self._run_step(x, out_dict, phase=phase)
 
                 curr_count += len(x)
                 curr_loss_gauss += batch_loss_gauss.item() * len(x)
@@ -108,6 +108,7 @@ class Trainer:
                 self.epsilon,
                 self.delta,
             )
+            self.diffusion.dp_params['t_bd'] = t_bd
 
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
@@ -132,9 +133,9 @@ class Trainer:
                 f'timesteps interval: {t_bd}\n'
                 f'noise_multiplier: {noise_multiplier})'
             )
-            for k in range(self.K):
+            for k in reversed(range(self.K)):
                 self.optimizer.noise_multiplier = noise_multiplier[k]
-                self.run_loop(epoch_alt=epochs_alt[k], ts=t_bd[k])
+                self.run_loop(epoch_alt=epochs_alt[k], phase=k)
         else:
             print('No-DP training...')
             self.run_loop()
