@@ -94,11 +94,6 @@ class Trainer:
             loss = np.around(curr_loss_gauss / curr_count, 3)
             pbar.set_description(f"Epoch {epoch + 1:04d} | Train Loss: {loss:.3f}")
             pbar.update(1)
-             
-        print(
-            f'({self.epsilon}, {self.delta})-DP training done!'
-            if self.is_dp else 'No-DP training done!'
-        )
 
     def run(self):
         noise_multiplier = None
@@ -130,12 +125,14 @@ class Trainer:
             T_max=self.steps,
             eta_min=self.init_lr * 0.01,
         )
-
+        
         if self.is_dp:
+            print(f'{self.epsilon}, {self.delta})-DP training done!\n{epochs_alt}\n{t_bd}\n{noise_multiplier}')
             for k in range(self.K):
                 self.optimizer.noise_multiplier = noise_multiplier[k]
                 self.run_loop(epoch_alt=epochs_alt[k], ts=t_bd[k])
         else:
+            print('No-DP training done!')
             self.run_loop()
     
 
