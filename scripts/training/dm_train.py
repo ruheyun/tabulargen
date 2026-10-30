@@ -35,11 +35,12 @@ class Trainer:
         self.steps = epochs * len(train_iter)
         self.step = 0
         self.info = info
-        self.is_dp = dp_params['is_dp']
-        self.epsilon = dp_params['epsilon']
-        self.delta = dp_params['delta']
-        self.max_grad_norm = dp_params['max_grad_norm']
-        self.K = dp_params['K']
+        self.is_dp = dp_params.get('is_dp', False)
+        if self.is_dp:
+            self.epsilon = dp_params['epsilon']
+            self.delta = dp_params['delta']
+            self.max_grad_norm = dp_params['max_grad_norm']
+            self.K = dp_params['K']
     
     def _anneal_C(self, step):
         C = 0.5 + (2 - 0.5) * np.exp(-5 * step / self.steps)
@@ -108,8 +109,6 @@ class Trainer:
                 self.delta,
             )
 
-            print(f'noise: {noise_multiplier}')
-
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
                 module=self.diffusion,
@@ -127,12 +126,12 @@ class Trainer:
         )
         
         if self.is_dp:
-            print(f'{self.epsilon}, {self.delta})-DP training done!\n{epochs_alt}\n{t_bd}\n{noise_multiplier}')
+            print(f'{self.epsilon}, {self.delta})-DP training...\n{epochs_alt}\n{t_bd}\n{noise_multiplier}')
             for k in range(self.K):
                 self.optimizer.noise_multiplier = noise_multiplier[k]
                 self.run_loop(epoch_alt=epochs_alt[k], ts=t_bd[k])
         else:
-            print('No-DP training done!')
+            print('No-DP training...')
             self.run_loop()
     
 
@@ -147,7 +146,7 @@ def train(
         gaussian_loss_type='mse',
         scheduler='cosine',
         ratio=1,
-        dp_params=None,
+        dp_params={},
         device=torch.device('cuda:0'),
         seed=0,
         checkpoint_path=None,
