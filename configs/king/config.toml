@@ -5,7 +5,7 @@ device = "cuda:0"
 path = "data/king"
 
 [experiment]
-path = "exp/king/run_10"
+path = "exp/king/run_00"
 
 [encoding]
 num_encoder = "minmax"
@@ -51,3 +51,4 @@ is_dp = false
 epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05
+K = 1
