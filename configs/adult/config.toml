@@ -48,7 +48,7 @@ catboost_params_path = "configs/adult/catboost.json"
 
 [privacy]
 is_dp = true
-epsilon = 1.0
+epsilon = 5.0
 max_grad_norm = 1.0
 delta = 1e-05
 K = 1
