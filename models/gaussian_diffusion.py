@@ -276,6 +276,10 @@ class GaussianDiffusion(torch.nn.Module):
 
         elif method == 'mixuniform':
             K = self.dp_params['K']
+
+            if K == 1:
+                return self.sample_time(b, device, 'uniform')
+            
             t_bd = self.dp_params['t_bd']
 
             weights = torch.tensor([1 / (K + 1)] * K, device=device)
