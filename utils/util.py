@@ -12,7 +12,7 @@ from inspect import isfunction
 from torch.utils.data import Dataset
 from typing import Union, Any, Dict, cast
 from pathlib import Path
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, mean_squared_error, r2_score, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.metrics import precision_recall_curve
 from opacus.grad_sample import GradSampleModule
 from dataclasses import dataclass
@@ -235,7 +235,7 @@ def evaluate(y_true, y_pred, task_type, threshold=0.5):
     elif task_type == 'regression':
         return {
             'rmse': float(np.sqrt(mean_squared_error(y_true, y_pred))),
-            'mae': float(mean_absolute_error(y_true, y_pred)),
+            'mape': float(mean_absolute_percentage_error(y_true, y_pred)),
             'r2': float(r2_score(y_true, y_pred)),
         }
     else:
