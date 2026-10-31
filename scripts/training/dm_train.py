@@ -108,7 +108,7 @@ class Trainer:
                 self.epsilon,
                 self.delta,
             )
-            self.diffusion.dp_params['t_bd'] = t_bd
+            self.diffusion.dp_params['t_bd'] = torch.tensor(t_bd, device=self.device)
 
             self.privacy_engine = PrivacyEngine()
             self.diffusion, self.optimizer, self.train_iter = self.privacy_engine.make_private(
