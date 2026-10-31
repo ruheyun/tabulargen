@@ -9,7 +9,7 @@ path = "exp/house/run_00"
 
 [encoding]
 num_encoder = "minmax"
-cat_encoder = "psk"
+cat_encoder = "alb"
 seed = 42
 
 [model]
@@ -51,3 +51,4 @@ is_dp = false
 epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05
+K = 1
