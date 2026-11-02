@@ -75,7 +75,7 @@ for dn in dns:
             quality_report = None
             quality_report = column_quality(data_path, exp_path)
 
-            write_json(exp_path / 'results.json', {
+            write_json(os.path.join(exp_path, 'results.json'), {
                 'models': models, 
                 **result,
                 'quality': quality_report
