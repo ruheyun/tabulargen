@@ -80,4 +80,4 @@ for dn in dns:
                 **result,
                 'quality': quality_report
             })
-            print(f'Results saved to {exp_path / "results.json"}')
+            print(f'Results saved to {exp_path}/results.json')
