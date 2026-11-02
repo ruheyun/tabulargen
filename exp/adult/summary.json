@@ -1,0 +1,15 @@
+{
+  "trial": 5,
+  "params": {
+    "num_timesteps": 500,
+    "scheduler": "linear",
+    "epochs": 300
+  },
+  "metric": "roc_auc",
+  "mean_val_score": 0.8949759337754438,
+  "sample_scores": [
+    0.8957856128903384,
+    0.8950272236425059,
+    0.8941149647934871
+  ]
+}
