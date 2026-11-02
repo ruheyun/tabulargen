@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
-from eval_tstr import train_tstr
+from scripts.evaluation.eval_tstr import train_tstr
 from utils import load_config, RunPaths, average_metrics, print_metrics
 from scripts.evaluation.eval_metrics import column_quality
 
