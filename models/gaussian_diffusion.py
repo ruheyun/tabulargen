@@ -282,10 +282,10 @@ class GaussianDiffusion(torch.nn.Module):
             
             t_bd = self.dp_params['t_bd']
 
-            # weights = torch.tensor([0.0] * K, device=device)
-            # weights[phase] = 1.0
-            weights = torch.tensor([1 / (K + 1)] * K, device=device)
-            weights[phase] = 2 / (K + 1)
+            weights = torch.tensor([0.0] * K, device=device)
+            weights[phase] = 1.0
+            # weights = torch.tensor([1 / (K + 1)] * K, device=device)
+            # weights[phase] = 2 / (K + 1)
 
             l = torch.tensor(t_bd[:-1], device=device)
             u = torch.tensor(t_bd[1:], device=device)
