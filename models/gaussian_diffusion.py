@@ -275,27 +275,54 @@ class GaussianDiffusion(torch.nn.Module):
             return t, pt
 
         elif method == 'mixuniform':
-            K = self.dp_params['K']
+            K = int(self.dp_params['K'])
 
             if K == 1:
                 return self.sample_time(b, device, 'uniform')
             
-            t_bd = self.dp_params['t_bd']
+            # t_bd = self.dp_params['t_bd']
+            boundaries = torch.as_tensor(
+                self.dp_params['t_bd'],
+                dtype=torch.long,
+                device=device,
+            )
 
-            weights = torch.tensor([0.0] * K, device=device)
-            weights[phase] = 1.0
+            widths = boundaries[1:] - boundaries[:-1]
+
+            # weights = torch.tensor([0.0] * K, device=device)
+            # weights[phase] = 1.0
             # weights = torch.tensor([1 / (K + 1)] * K, device=device)
-            # weights[phase] = 2 / (K + 1)
+            weights = torch.full(
+                (K,),
+                1.0 / (K + 1),
+                dtype=torch.float32,
+                device=device,
+            )
+            weights[phase] = 2.0 / (K + 1)
 
-            l = torch.tensor(t_bd[:-1], device=device)
-            u = torch.tensor(t_bd[1:], device=device)
+            probabilities = torch.repeat_interleave(
+                weights / widths.to(weights.dtype),
+                widths,
+            )
+
+            probabilities = probabilities / probabilities.sum()
+
+            # l = torch.tensor(t_bd[:-1], device=device)
+            # u = torch.tensor(t_bd[1:], device=device)
             
-            indices = torch.multinomial(weights, b, replacement=True)
-            t = l[indices] + (
-                torch.rand(b, device=device) * (u[indices] - l[indices])
-            ).long()
+            # indices = torch.multinomial(weights, b, replacement=True)
+            # t = l[indices] + (
+            #     torch.rand(b, device=device) * (u[indices] - l[indices])
+            # ).long()
 
-            pt = torch.ones_like(t).float() / self.num_timesteps
+            # pt = torch.ones_like(t).float() / self.num_timesteps
+
+            t = torch.multinomial(
+                probabilities, 
+                num_samples=b,
+                replacement=True,
+            )
+            pt = probabilities[t]
 
             return t, pt
         
@@ -315,7 +342,7 @@ class GaussianDiffusion(torch.nn.Module):
             raise ValueError
         
     
-    def compute_loss(self, x, out_dict, ts=None, phase=None):
+    def compute_loss(self, x, out_dict, ts=None, phase=None, importance_correction=True):
         b = x.shape[0]
         device = x.device
 
@@ -323,11 +350,12 @@ class GaussianDiffusion(torch.nn.Module):
             raise ValueError("ts and phase can't exist at the same time")
     
         if phase is not None:
-            t, _ = self.sample_time(b, device, 'mixuniform', phase=phase)
+            t, pt = self.sample_time(b, device, 'mixuniform', phase=phase)
         elif ts is not None:
             t = torch.tensor(ts, device=device).long().expand(b)
+            pt = None
         else:
-            t, _ = self.sample_time(b, device, 'uniform')
+            t, pt = self.sample_time(b, device, 'uniform')
 
         noise = torch.randn_like(x)
         x_t = self.gaussian_q_sample(x, t, noise=noise)
@@ -338,9 +366,15 @@ class GaussianDiffusion(torch.nn.Module):
             **out_dict
         )
 
-        loss_gauss = self._gaussian_loss(model_out, noise)
+        losses = self._gaussian_loss(model_out, noise)
 
-        return loss_gauss.mean()
+        if importance_correction and pt is not None:
+            correction = (
+                1.0 / (self.num_timesteps * pt)
+            ).detach()
+            losses = losses * correction
+
+        return losses.mean()
 
 
     def sample_all(self, num_samples, batch_size, y_dist=None):
