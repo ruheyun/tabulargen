@@ -5,12 +5,12 @@ import pandas as pd
 import os
 
    
-original_data = pd.read_csv(os.path.join('data/adult/adult_train.csv'))
-syn_data = pd.read_csv(os.path.join('exp/adult/nondp.csv'))
+original_data = pd.read_csv(os.path.join('data/bank/bank_train.csv'))
+syn_data = pd.read_csv(os.path.join('exp/bank/nondp.csv'))
 # syn_DP_data = pd.read_csv(os.path.join('exp/adult/syn-dp.csv'))
-syn_IDP_data = pd.read_csv(os.path.join('exp/adult/syn-idp.csv'))
+syn_IDP_data = pd.read_csv(os.path.join('exp/bank/syn-dp.csv'))
 
-col = "relationship"
+col = "credit_card"
 original_data["Dataset"] = "Original Data"
 syn_data["Dataset"] = "Non-DP Synthetic Data"
 # syn_DP_data["Dataset"] = "DP Synthetic Data"
@@ -36,4 +36,5 @@ sns.countplot(
 )
 ax.set_title(f"Data Distribution for Column: {col}")
 plt.legend()
+plt.savefig("sn2.png", dpi=300, bbox_inches="tight")
 plt.show()
