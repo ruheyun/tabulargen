@@ -6,7 +6,7 @@ import os
 
         
 original_data = pd.read_csv(os.path.join('data/buddy/buddy_train.csv'))
-syn_data = pd.read_csv(os.path.join('exp/buddy/nondp.csv'))
+syn_data = pd.read_csv(os.path.join('exp/buddy/nondp1.csv'))
 # syn_DP_data = pd.read_csv(os.path.join('exp/adult/syn-dp.csv'))
 syn_IDP_data = pd.read_csv(os.path.join('exp/buddy/syn-dp.csv'))
 
