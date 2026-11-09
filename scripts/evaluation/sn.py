@@ -6,14 +6,18 @@ import os
 
         
 original_data = pd.read_csv(os.path.join('data/adult/adult_train.csv'))
+syn_data = pd.read_csv(os.path.join('exp/adult/nondp.csv'))
+# syn_DP_data = pd.read_csv(os.path.join('exp/adult/syn-dp.csv'))
+syn_IDP_data = pd.read_csv(os.path.join('exp/adult/syn-idp.csv'))
 
 
 sns.set_theme()
-col = "age"
-fig, ax = plt.subplots(figsize=(12, 6))
+col = "educational-num"
+fig, ax = plt.subplots(figsize=(8, 5))
 sns.kdeplot(data=original_data, x=col, label="Original Data", ax=ax, color='C0', fill=True)
-# sns.kdeplot(data=synt_dataset, x=col, label="Non-DP FinDiff Synthetic Data", ax=ax, color='C2', fill=True)
-# sns.kdeplot(data=synt_dataset_DP, x=col, label="DP FinDiff Synthetic Data", ax=ax, color='C1', fill=True)
+sns.kdeplot(data=syn_data, x=col, label="Non-DP Synthetic Data", ax=ax, color='C1', fill=True)
+# sns.kdeplot(data=syn_DP_data, x=col, label="DP Synthetic Data", ax=ax, color='C2', fill=True)
+sns.kdeplot(data=syn_IDP_data, x=col, label="Importance DP Synthetic Data", ax=ax, color='C5', fill=True)
 ax.set_title(f"Distribution Comparison for Column: {col}")
 plt.legend()
 plt.show()
