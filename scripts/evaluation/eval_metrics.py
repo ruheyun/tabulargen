@@ -30,6 +30,9 @@ def column_quality(data_path, exp_path):
     synt_data = pd.read_csv(os.path.join(exp_path, 'reverse.csv'))
     metadata = load_json(os.path.join(data_path, 'metadata.json'))
 
+    if info['task_type'] != 'regression':
+        col_name = list(metadata['columns'].keys())[-1]
+        metadata['columns'][col_name]['sdtype'] = 'text'
 
     return column_shape(real_data, synt_data, metadata)
 
