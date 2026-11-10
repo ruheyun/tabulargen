@@ -33,6 +33,7 @@ def main():
     parser.add_argument('--eval5', action='store_true', default=False)
     parser.add_argument('--sample_seed', type=int)
     parser.add_argument('--ratio', type=float, default=1.0)
+    parser.add_argument('--is_dp', action='store_true', default=False)
     parser.add_argument('--epsilon', type=float)
     parser.add_argument('--K', type=int)
 
@@ -41,6 +42,9 @@ def main():
 
     if args.sample_seed is not None and args.sample_seed >= 0:
         raw_config['sample']['seed'] = args.sample_seed
+
+    if args.is_dp:
+        raw_config['privacy']['is_dp'] = args.is_dp
 
     if args.epsilon is not None and args.epsilon >= 0:
         raw_config['privacy']['epsilon'] = args.epsilon

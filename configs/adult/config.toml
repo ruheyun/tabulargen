@@ -32,7 +32,7 @@ num_workers = 2
 epochs = 300  # 300
 lr = 1e-4
 weight_decay = 0.0
-batch_size = 500
+batch_size = 256
 
 [sample]
 seed = 0
@@ -47,7 +47,7 @@ mode = "synthetic"
 catboost_params_path = "configs/adult/catboost.json"
 
 [privacy]
-is_dp = true
+is_dp = false
 epsilon = 10.0
 max_grad_norm = 1.0
 delta = 1e-05
