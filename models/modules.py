@@ -158,7 +158,7 @@ class ResNet(nn.Module):
 
             self.linear_first = nn.Linear(d_main, d_main)
             self.linear_second = nn.Linear(d_main, d_main)
-            self.activation = _make_nn_module(activation)
+            self.activation = nn.SiLU()
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             x_input = x
@@ -227,7 +227,7 @@ class ResNet(nn.Module):
 
 
 class MLPDiffusion(nn.Module):
-    def __init__(self, d_in, num_classes, is_y_cond, rtdl_params, dim_t=128):
+    def __init__(self, d_in, num_classes, is_y_cond, rtdl_params, dim_t=64):
         super().__init__()
         self.dim_t = dim_t
         self.num_classes = num_classes
