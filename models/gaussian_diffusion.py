@@ -377,7 +377,7 @@ class GaussianDiffusion(torch.nn.Module):
         return losses.mean()
 
 
-    def sample_all(self, num_samples, batch_size, y_dist=None):
+    def sample_all(self, num_samples, batch_size, y_dist=None, y_conditions=None, max_attempts=10):
     
         sample_fn = self.sample
 
@@ -413,15 +413,29 @@ class GaussianDiffusion(torch.nn.Module):
     
     
     @torch.no_grad()
-    def sample(self, num_samples, y_dist=None):
+    def sample(self, num_samples, y_dist=None, y_conditions=None):
         b = num_samples
         device = self.log_alpha.device
+
+        if y_dist is not None and y_conditions is not None:
+            raise ValueError('y_dist and y_conditions cannot be provided together')
+        
         z_norm = torch.randn((b, self.input_dim), device=device)
 
         out_dict = {}
-        if exists(y_dist):
+
+        if exists(y_conditions):
+            y = torch.as_tensor(y_conditions, dtype=torch.long, device=device).reshape(-1)
+
+            if len(y) != b:
+                raise ValueError('Number of conditions must match num_samples')
+
+            out_dict = {'y': y}
+
+        elif exists(y_dist):
             y = torch.multinomial(y_dist, num_samples=b, replacement=True)
             out_dict = {'y': y.long().to(device)}
+
         for i in reversed(range(0, self.num_timesteps)):
             t = torch.full((b,), i, device=device, dtype=torch.long)
             model_out = self._denoise_fn(
