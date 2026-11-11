@@ -377,38 +377,101 @@ class GaussianDiffusion(torch.nn.Module):
         return losses.mean()
 
 
-    def sample_all(self, num_samples, batch_size, y_dist=None, y_conditions=None, max_attempts=10):
+    # def sample_all(self, num_samples, batch_size, y_dist=None, y_conditions=None, max_attempts=10):
     
-        sample_fn = self.sample
+    #     sample_fn = self.sample
 
-        b = batch_size
+    #     b = batch_size
 
-        all_y = []
-        all_samples = []
-        num_generated = 0
-        num_nan = 0
+    #     all_y = []
+    #     all_samples = []
+    #     num_generated = 0
+    #     num_nan = 0
+    #     with tqdm(total=num_samples, desc='Sampling', unit='sample') as pbar:
+    #         while num_generated < num_samples:
+    #             sample, out_dict = sample_fn(b, y_dist)
+    #             y_batch = out_dict.get('y', None)
+    #             mask_nan = torch.any(sample.isnan(), dim=1)
+    #             if mask_nan.any():
+    #                 num_nan += mask_nan.sum().item()
+    #                 sample = sample[~mask_nan]
+    #                 if exists(y_batch):
+    #                     y_batch = y_batch[~mask_nan]
+
+    #             all_samples.append(sample)
+
+    #             if exists(y_batch):
+    #                 all_y.append(y_batch.cpu())
+    #             num_generated += sample.shape[0]
+
+    #             pbar.update(min(sample.shape[0], num_samples - pbar.n))
+    #             pbar.set_postfix(generated=num_generated, nan=num_nan)
+
+    #     x_gen = torch.cat(all_samples, dim=0)[:num_samples]
+    #     y_gen = torch.cat(all_y, dim=0)[:num_samples] if all_y else None
+    #     return x_gen, y_gen
+
+
+    def sample_all(self, num_samples, batch_size, y_dist=None, y_conditions=None, max_attempts=10):
+        if exists(y_dist) and exists(y_conditions):
+            raise ValueError('y_dist and y_conditions cannot be provided together')    
+
+        if exists(y_conditions):
+            y_conditions = torch.as_tensor(y_conditions, dtype=torch.long, device='cpu').reshape(-1)
+
+            if len(y_conditions) != num_samples:
+                raise ValueError('Number of conditions must match num_samples')
+        
+        x_gen = torch.empty(
+            (num_samples, self.input_dim),
+            dtype=torch.float32,
+        )
+
+        has_labels = (
+            exists(y_dist) or exists(y_conditions)
+        )
+
+        y_gen = (
+            torch.empty(num_samples, dtype=torch.long)
+            if has_labels else None
+        )
+
         with tqdm(total=num_samples, desc='Sampling', unit='sample') as pbar:
-            while num_generated < num_samples:
-                sample, out_dict = sample_fn(b, y_dist)
-                y_batch = out_dict.get('y', None)
-                mask_nan = torch.any(sample.isnan(), dim=1)
-                if mask_nan.any():
-                    num_nan += mask_nan.sum().item()
-                    sample = sample[~mask_nan]
-                    if exists(y_batch):
-                        y_batch = y_batch[~mask_nan]
+            for start in range(0, num_samples, batch_size):
+                end = min(start + batch_size, num_samples)
 
-                all_samples.append(sample)
+                pending = torch.arange(end - start)
 
-                if exists(y_batch):
-                    all_y.append(y_batch.cpu())
-                num_generated += sample.shape[0]
+                for _ in range(max_attempts):
+                    if pending.numel() == 0:
+                        break
 
-                pbar.update(min(sample.shape[0], num_samples - pbar.n))
-                pbar.set_postfix(generated=num_generated, nan=num_nan)
+                    batch_y = (
+                        y_conditions[start:end][pending]
+                        if exists(y_conditions) else None
+                    )
 
-        x_gen = torch.cat(all_samples, dim=0)[:num_samples]
-        y_gen = torch.cat(all_y, dim=0)[:num_samples] if all_y else None
+                    generated, out_dict = self.sample(
+                        num_samples=pending.numel(),
+                        y_dist=y_dist,
+                        y_conditions=batch_y,
+                    )
+
+                    generated = generated.detach().cpu()
+                    valid = torch.isfinite(generated).all(dim=1)
+
+                    positions = start + pending[valid]
+                    x_gen[positions] = generated[valid]
+
+                    if exists(y_gen):
+                        labels = out_dict['y'].detach().cpu()
+                        y_gen[positions] = labels[valid]
+
+                    pbar.update(int(valid.sum().item()))
+                    pending = pending[~valid]
+
+                if pending.numel() > 0:
+                    raise RuntimeError('Failed to generate valid samples')
         return x_gen, y_gen
     
     
