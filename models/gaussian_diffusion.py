@@ -461,7 +461,7 @@ class GaussianDiffusion(torch.nn.Module):
                     valid = torch.isfinite(generated).all(dim=1)
 
                     positions = start + pending[valid]
-                    x_gen[positions] = generated[valid]
+                    x_gen[positions] = generated[valid].to(x_gen.dtype)
 
                     if exists(y_gen):
                         labels = out_dict['y'].detach().cpu()
