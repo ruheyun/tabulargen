@@ -55,14 +55,21 @@ def sample(
     diffusion.eval()
 
     print('Starting sampling...')
+    empirical_class_dist = None
+    y_conditions = None
     if info['task_type'] == 'regression':
-        empirical_class_dist = None
+        pass
     elif disbalance == 'uniform':
         empirical_class_dist = torch.ones(info['n_classes'], dtype=torch.float32) / info['n_classes']
-    else:
+    elif disbalance == 'empirical':
         empirical_class_dist = torch.tensor(info['origin_p_y'], dtype=torch.float32)
-    
-    x_gen, y_gen = diffusion.sample_all(num_samples, batch_size, empirical_class_dist)
+    else:
+        labels = pd.read_csv(encoding_path / 'train.csv').iloc[:, -1]
+        y_conditions = torch.tensor(labels.to_numpy(), dtype=torch.long)
+        if num_samples != len(y_conditions):
+            num_samples = len(y_conditions)
+
+    x_gen, y_gen = diffusion.sample_all(num_samples, batch_size, y_dist=empirical_class_dist, y_conditions=y_conditions)
     
     X_gen = x_gen.cpu().numpy()
     if info['task_type'] == 'regression':
