@@ -151,19 +151,19 @@ def main():
             for name in models
         }
 
-        groups = {}
-        if 'catboost' in per_model:
-            groups['catboost'] = per_model['catboost']
+        # groups = {}
+        # if 'catboost' in per_model:
+        #     groups['catboost'] = per_model['catboost']
 
-        simple_results = {
-            name: result
-            for name, result in per_model.items()
-            if name != 'catboost'
-        }
-        if simple_results:
-            groups['simple'] = average_metrics(simple_results)
+        # simple_results = {
+        #     name: result
+        #     for name, result in per_model.items()
+        #     if name != 'catboost'
+        # }
+        # if simple_results:
+        #     groups['simple'] = average_metrics(simple_results)
 
-        metrics = average_metrics(groups)
+        metrics = average_metrics(per_model)
         print('Average results')
         print_metrics(metrics)
 
