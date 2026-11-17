@@ -248,7 +248,7 @@ class MLPDiffusion(nn.Module):
         self.time_embed = nn.Sequential(
             nn.Linear(dim_t, dim_t),
             nn.SiLU(),
-            nn.Linear(dim_t, dim_t)
+            # nn.Linear(dim_t, dim_t)
         )
 
     def forward(self, x, timesteps, y=None):
