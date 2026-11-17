@@ -84,7 +84,7 @@ def main():
             num_samples=raw_config['sample']['num_samples'],
             model_path=checkpoint_path,
             device=raw_config['device'],
-            disbalance='uniform' if raw_config['sample']['class_distribution'] == 'uniform' else None,
+            disbalance= None,
             seed=raw_config['sample'].get('seed', 0)
         )
 
