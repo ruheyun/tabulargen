@@ -35,6 +35,8 @@ def main():
     parser.add_argument('--ratio', type=float, default=1.0)
     parser.add_argument('--is_dp', action='store_true', default=False)
     parser.add_argument('--epsilon', type=float)
+    parser.add_argument('--max_grad_norm', type=float)
+    parser.add_argument('--delta', type=float)
     parser.add_argument('--K', type=int)
 
     args = parser.parse_args()
