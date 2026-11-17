@@ -9,7 +9,7 @@ path = "exp/bank/run_00"
 
 [encoding]
 num_encoder = "minmax"
-cat_encoder = "alb"
+cat_encoder = "psk"
 seed = 42
 
 [model]
