@@ -280,7 +280,6 @@ class GaussianDiffusion(torch.nn.Module):
             if K == 1:
                 return self.sample_time(b, device, 'uniform')
             
-            # t_bd = self.dp_params['t_bd']
             boundaries = torch.as_tensor(
                 self.dp_params['t_bd'],
                 dtype=torch.long,
@@ -289,9 +288,6 @@ class GaussianDiffusion(torch.nn.Module):
 
             widths = boundaries[1:] - boundaries[:-1]
 
-            # weights = torch.tensor([0.0] * K, device=device)
-            # weights[phase] = 1.0
-            # weights = torch.tensor([1 / (K + 1)] * K, device=device)
             weights = torch.full(
                 (K,),
                 1.0 / (K + 1),
@@ -306,16 +302,6 @@ class GaussianDiffusion(torch.nn.Module):
             )
 
             probabilities = probabilities / probabilities.sum()
-
-            # l = torch.tensor(t_bd[:-1], device=device)
-            # u = torch.tensor(t_bd[1:], device=device)
-            
-            # indices = torch.multinomial(weights, b, replacement=True)
-            # t = l[indices] + (
-            #     torch.rand(b, device=device) * (u[indices] - l[indices])
-            # ).long()
-
-            # pt = torch.ones_like(t).float() / self.num_timesteps
 
             t = torch.multinomial(
                 probabilities, 
