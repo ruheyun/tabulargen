@@ -318,13 +318,13 @@ class GaussianDiffusion(torch.nn.Module):
             pt = self.adaptive_p.to(device)
             t = torch.multinomial(pt, b, replacement=True)
 
-            return t, pt
+            return t, pt[t]
         
         elif method == 'snr':
             pt = self.snr_p.to(device)
             t = torch.multinomial(pt, b, replacement=True)
 
-            return t, pt
+            return t, pt[t]
 
         else:
             raise ValueError
