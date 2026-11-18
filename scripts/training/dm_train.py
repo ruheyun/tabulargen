@@ -52,7 +52,7 @@ class Trainer:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = lr
 
-    def _run_step(self, x, out_dict, ts=None, phase=None):
+    def _run_step(self, x, out_dict, phase=None):
         x = x.to(self.device)
         for k in out_dict:
             out_dict[k] = out_dict[k].long().to(self.device)
@@ -150,6 +150,7 @@ def train(
         model_params=None,
         num_timesteps=500,
         gaussian_loss_type='mse',
+        time_sampling='uniform',
         scheduler='cosine',
         ratio=1,
         dp_params={},
@@ -184,6 +185,7 @@ def train(
         denoise_fn=model,
         gaussian_loss_type=gaussian_loss_type,
         num_timesteps=num_timesteps,
+        time_sampling=time_sampling,
         scheduler=scheduler,
         ratio=ratio,
         dp_params=dp_params,

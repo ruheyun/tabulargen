@@ -60,6 +60,7 @@ class GaussianDiffusion(torch.nn.Module):
         num_timesteps=1000,
         gaussian_loss_type='mse',
         gaussian_parametrization='eps',
+        time_sampling='uniform',
         parametrization='x0',
         scheduler='cosine',
         ratio=1,
@@ -76,6 +77,7 @@ class GaussianDiffusion(torch.nn.Module):
         self.gaussian_loss_type = gaussian_loss_type
         self.gaussian_parametrization = gaussian_parametrization
         self.num_timesteps = num_timesteps
+        self.time_sampling = time_sampling
         self.parametrization = parametrization
         self.scheduler = scheduler
         self.dp_params = dp_params
@@ -274,7 +276,7 @@ class GaussianDiffusion(torch.nn.Module):
 
             return t, pt
 
-        elif method == 'mixuniform':
+        elif method == 'adamixu':
             K = int(self.dp_params['K'])
 
             if K == 1:
@@ -312,7 +314,7 @@ class GaussianDiffusion(torch.nn.Module):
 
             return t, pt
         
-        elif method == 'ada':
+        elif method == 'adaptive':
             pt = self.adaptive_p.to(device)
             t = torch.multinomial(pt, b, replacement=True)
 
@@ -332,16 +334,11 @@ class GaussianDiffusion(torch.nn.Module):
         b = x.shape[0]
         device = x.device
 
-        if ts is not None and phase is not None:
-            raise ValueError("ts and phase can't exist at the same time")
-    
-        if phase is not None:
-            t, pt = self.sample_time(b, device, 'mixuniform', phase=phase)
-        elif ts is not None:
+        if ts is not None:
             t = torch.tensor(ts, device=device).long().expand(b)
             pt = None
         else:
-            t, pt = self.sample_time(b, device, 'uniform')
+            t, pt = self.sample_time(b, device, method=self.time_sampling, phase=phase)
 
         noise = torch.randn_like(x)
         x_t = self.gaussian_q_sample(x, t, noise=noise)

@@ -31,6 +31,7 @@ def main():
     parser.add_argument('--sample', action='store_true', default=False)
     parser.add_argument('--eval', action='store_true', default=False)
     parser.add_argument('--eval5', action='store_true', default=False)
+    parser.add_argument('--time_sampling', type=str)
     parser.add_argument('--sample_seed', type=int)
     parser.add_argument('--ratio', type=float, default=1.0)
     parser.add_argument('--is_dp', action='store_true', default=False)
@@ -41,6 +42,9 @@ def main():
 
     args = parser.parse_args()
     raw_config = load_config(args.config)
+
+    if args.time_sampling is not None:
+        raw_config['diffusion']['time_sampling'] = args.time_sampling
 
     if args.sample_seed is not None and args.sample_seed >= 0:
         raw_config['sample']['seed'] = args.sample_seed
@@ -152,18 +156,6 @@ def main():
             })
             for name in models
         }
-
-        # groups = {}
-        # if 'catboost' in per_model:
-        #     groups['catboost'] = per_model['catboost']
-
-        # simple_results = {
-        #     name: result
-        #     for name, result in per_model.items()
-        #     if name != 'catboost'
-        # }
-        # if simple_results:
-        #     groups['simple'] = average_metrics(simple_results)
 
         metrics = average_metrics(per_model)
         print('Average results')
