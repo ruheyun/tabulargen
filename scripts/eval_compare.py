@@ -72,8 +72,8 @@ if __name__ == "__main__":
     # eps = ['1', '5', '10']
     models = ['catboost', 'tree', 'rf', 'lr', 'mlp']
 
-    dns = ['cardio']
-    mdls = ['findiff']
+    dns = ['default']
+    mdls = ['tvae']
     eps = ['1', '5', '10']
 
     main(dns, mdls, eps, models)
