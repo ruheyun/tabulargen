@@ -135,11 +135,8 @@ class GaussianDiffusion(torch.nn.Module):
         self.register_buffer('sqrt_one_minus_alphas_cumprod', sqrt_one_minus_alphas_cumprod.float().to(device))
         self.register_buffer('sqrt_recip_alphas_cumprod', sqrt_recip_alphas_cumprod.float().to(device))
         self.register_buffer('sqrt_recipm1_alphas_cumprod', sqrt_recipm1_alphas_cumprod.float().to(device))
-
-        self.Lt_count = torch.zeros(num_timesteps, device=device)
-        self.Lt_history = torch.zeros(num_timesteps, device=device)
-        self.register_buffer('Lt_history', self.Lt_history)
-        self.register_buffer('Lt_count', self.Lt_count)
+        self.register_buffer('Lt_history', torch.zeros(num_timesteps))
+        self.register_buffer('Lt_count', torch.zeros(num_timesteps))
 
         snr = alphas_cumprod / (1 - alphas_cumprod + eps)
         log_snr = np.log(snr + eps)
