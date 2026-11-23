@@ -136,8 +136,10 @@ class GaussianDiffusion(torch.nn.Module):
         self.register_buffer('sqrt_recip_alphas_cumprod', sqrt_recip_alphas_cumprod.float().to(device))
         self.register_buffer('sqrt_recipm1_alphas_cumprod', sqrt_recipm1_alphas_cumprod.float().to(device))
 
-        self.register_buffer('Lt_history', torch.zeros(num_timesteps))
-        self.register_buffer('Lt_count', torch.zeros(num_timesteps))
+        self.Lt_count = torch.zeros(num_timesteps, device=device)
+        self.Lt_history = torch.zeros(num_timesteps, device=device)
+        self.register_buffer('Lt_history', self.Lt_history)
+        self.register_buffer('Lt_count', self.Lt_count)
 
         snr = alphas_cumprod / (1 - alphas_cumprod + eps)
         log_snr = np.log(snr + eps)
@@ -253,22 +255,50 @@ class GaussianDiffusion(torch.nn.Module):
             "sample": sample, 
             "pred_xstart": out["pred_xstart"]
         }
-        
+
+    @torch.no_grad()
+    def update_loss_history(self, t, losses, decay=0.9):
+        t = t.detach().to(device=self.Lt_history.device, dtype=torch.long).reshape(-1)
+
+        losses = losses.detach().to(self.Lt_history).reshape(-1)
+
+        if t.numel() != losses.numel():
+            raise ValueError('t and losses must have the same number of elements')
+        if t.numel() == 0:
+            return
+
+        squared_losses = losses ** 2
+        if not torch.isfinite(squared_losses).all():
+            raise ValueError('Losses must be finite')
+
+        counts = torch.bincount(t, minlength=self.num_timesteps).to(self.Lt_count.device)
+        sums = torch.zeros_like(self.Lt_history).scatter_add_(0, t, squared_losses)
+
+        active = counts > 0
+        batch_second_moment = (sums[active] / counts[active].to(sums.dtype))
+        previous = self.Lt_history[active]
+        self.Lt_history[active] = torch.where(
+            self.Lt_count[active] == 0,
+            batch_second_moment,
+            decay * previous + (1 - decay) * batch_second_moment
+        )
+        self.Lt_count.add_(counts.to(self.Lt_count.dtype))
         
     def sample_time(self, b, device, method='uniform', phase=None):
         if method == 'importance':
             if not (self.Lt_count > 10).all():
                 return self.sample_time(b, device, method='uniform')
 
-            Lt_sqrt = torch.sqrt(self.Lt_history + 1e-10) + 0.0001
-            Lt_sqrt[0] = Lt_sqrt[1]  
-            pt_all = (Lt_sqrt / Lt_sqrt.sum()).to(device)
+            scores = self.Lt_history.clamp_min(1e-12).sqrt()
+            probabilities = scores / scores.sum()
 
-            t = torch.multinomial(pt_all, num_samples=b, replacement=True).to(device)
+            uniform_prob = 0.001
+            probabilities = (1 - uniform_prob) * probabilities + uniform_prob / self.num_timesteps
+            probabilities = probabilities / probabilities.sum()
+            probabilities = probabilities.to(device)
+            t = torch.multinomial(probabilities, num_samples=b, replacement=True).to(device)
 
-            pt = pt_all.gather(dim=0, index=t)
-
-            return t, pt
+            return t, probabilities[t]
 
         elif method == 'uniform':
             t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
@@ -350,6 +380,9 @@ class GaussianDiffusion(torch.nn.Module):
         )
 
         losses = self._gaussian_loss(model_out, noise)
+
+        if self.time_sampling == 'importance':
+            self.update_loss_history(t, losses)
 
         if importance_correction and pt is not None:
             correction = (
