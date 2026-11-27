@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # eps = ['1', '5', '10']
     models = ['catboost', 'tree', 'rf', 'lr', 'mlp']
 
-    dns = ['market']
+    dns = ['shoppers']
     mdls = ['findiff']
     eps = ['1', '5', '10']
 
